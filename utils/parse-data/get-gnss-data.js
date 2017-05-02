@@ -36,11 +36,16 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 var _1 = require("../");
 var nj = require("numjs");
-var fs = require("fs");
 var RadiosCurvaturaGRS80 = new _1.RadiosCurvatura('GRS80');
 var GRS80 = new _1.Elipsoide('GRS80');
 var We = GRS80.getProperties().We;
 var TIME_DIFF = 0.005;
+var REGEX_SESSION = /session\ +\d+/g;
+var REGEX_PHOTO = /(photo\ +\d+)|(\d+:\d+:\d+)|(IMG_\d+)/g;
+var REGEX_START_PROJECT = /(starting\ +->\ +)|(point\ +\d+)|(\d+:\d+:\d+)/g;
+var REGEX_END_PROJECT = /(ending\ +->\ +)|(point\ +\d+)|(\d+:\d+:\d+)/g;
+var REGEX_GNSS_FILE = /(GNSS file:)|(\w+?\.\w+)/g;
+var REGEX_INS_FILE = /(INS file\ +:)|(\w+?\.\w+)/g;
 /**
  *
  * @param sesionNumber
@@ -58,7 +63,8 @@ function ParseGNSS(sesionNumber) {
                             .map(Number);
                     });
                     return [2 /*return*/, fileGNSS.map(function (actual, index, array) {
-                            var anterior = array[index - 1];
+                            var anterior = array[index - 1] ? array[index - 1] : array[index];
+                            var siguiente = array[index + 1] ? array[index + 1] : array[index];
                             var _a = actual.slice(1, 7), day = _a[0], month = _a[1], year = _a[2], hour = _a[3], minute = _a[4], second = _a[5];
                             //console.log(day, month, year, hour, minute, second);
                             var date = new Date(year, month - 1, day, hour, minute, second);
@@ -70,11 +76,13 @@ function ParseGNSS(sesionNumber) {
                             //console.log(anterior, actual);
                             var _b = actual.slice(8, 11), latAct = _b[0], lonAct = _b[1], hAct = _b[2];
                             var _c = anterior.slice(8, 11), latAnt = _c[0], lonAnt = _c[1], hAnt = _c[2];
+                            var _d = anterior.slice(8, 11), latSig = _d[0], lonSig = _d[1], hSig = _d[2];
                             //console.log(latAct, lonAct, hAct);
-                            var latProm = (latAct + latAnt) / 2, latDiff = (latAct - latAnt), lonProm = (lonAct + lonAnt) / 2, lonDiff = (lonAct - lonAnt), hProm = (hAct + hAnt) / 2, hDiff = (hAct - hAnt), _d = [
-                                RadiosCurvaturaGRS80.getRadioElipseMeridiana(latProm),
-                                RadiosCurvaturaGRS80.getRadioPrimerVertical(latProm)
-                            ], ro = _d[0], nhu = _d[1], vN_ = latDiff * (ro + hProm), aN_ = latDiff, vE_ = lonDiff * (nhu + hProm) * Math.cos(latProm), aE_ = lonDiff * Math.cos(latProm), vD_ = -hDiff, aD_ = hDiff;
+                            var latDiff = (latAct - latAnt) / 1 // Entre 1 ya que es diferencial entre tiempo (1 segundo)
+                            , latDiff_ = (latSig - latAct) / 1, lonDiff = (lonAct - lonAnt) / 1, lonDiff_ = (lonSig - lonAct) / 1, hDiff = (hAct - hAnt) / 1, hDiff_ = (hSig - hAct) / 1, _e = [
+                                RadiosCurvaturaGRS80.getRadioElipseMeridiana(latAct),
+                                RadiosCurvaturaGRS80.getRadioPrimerVertical(latAct)
+                            ], ro = _e[0], nhu = _e[1], vN_ = (latDiff * (ro + hAct) + latDiff_ * (ro + hAct)) / 2, aN_ = (latSig - 2 * latAct + latAnt) * (ro + hAct), vE_ = (lonDiff * (nhu + hAct) * Math.cos(latAct) + lonDiff_ * (nhu + hAct) * Math.cos(latAct)) / 2, aE_ = (lonSig - 2 * lonAct + lonAnt) * (nhu + hAct) * Math.cos(latAct), vD_ = (hDiff + hDiff_) / 2, aD_ = hSig - 2 * hAct + hAnt;
                             return [date].concat(actual.slice(8, 11), [vN_, vE_, vD_, aN_, aE_, aD_]);
                         })];
             }
@@ -152,7 +160,7 @@ exports.ParseInertial = ParseInertial;
  */
 function mergeInertialGNSS(sesionNumber, delay) {
     return __awaiter(this, void 0, void 0, function () {
-        var gnss, inertial, data, minDelay, _a, vN, vE, vD, i, _b, date, latGNSS, lonGNSS, hGNSS, vN_, vE_, vD_, aN_, aE_, aD_, gn, j, _c, time, roll, pitch, yaw, ax, ay, az, aN, aE, aD, ro, nhu, latIner, lonIner, hIner, _d;
+        var gnss, inertial, data, minDelay, _a, vN, vE, vD, i, _b, date, latGNSS, lonGNSS, hGNSS, vN_, vE_, vD_, aN_, aE_, aD_, gn, latIner, lonIner, hIner, cont, j, dateInertial, _c, time, roll, pitch, yaw, ax, ay, az, aN, aE, aD, ro, nhu, _d;
         return __generator(this, function (_e) {
             switch (_e.label) {
                 case 0: return [4 /*yield*/, ParseGNSS(sesionNumber)];
@@ -162,33 +170,117 @@ function mergeInertialGNSS(sesionNumber, delay) {
                 case 2:
                     inertial = _e.sent();
                     data = [];
-                    console.log(delay, Math.floor(gnss.length - (inertial.length / 200)));
                     minDelay = Math.ceil(gnss.length - (inertial.length / 200));
-                    delay = Math.max(delay, minDelay);
+                    delay = Math.min(delay, minDelay);
+                    console.log(delay);
                     _a = [0, 0, 0], vN = _a[0], vE = _a[1], vD = _a[2];
-                    for (i = delay; i < gnss.length; i++) {
+                    for (i = 0; i < gnss.length; i++) {
                         _b = gnss[i], date = _b[0], latGNSS = _b[1], lonGNSS = _b[2], hGNSS = _b[3], vN_ = _b[4], vE_ = _b[5], vD_ = _b[6], aN_ = _b[7], aE_ = _b[8], aD_ = _b[9], gn = _1.somigliana(latGNSS, hGNSS);
-                        //console.log(gn);
-                        for (j = 200 * (i - delay); j < 200 * (i - delay) + 200; j++) {
-                            _c = inertial[j], time = _c[0], roll = _c[1], pitch = _c[2], yaw = _c[3], ax = _c[4], ay = _c[5], az = _c[6], aN = ax + gn[0] - 2 * We * vE_ * Math.sin(latGNSS) + aN_ * vD_ - aE_ * vE_ * Math.sin(latGNSS), aE = ay + gn[1] - 2 * We * vN_ * Math.sin(latGNSS) + 2 * We * vD_ * Math.cos(latGNSS) + aE_ * vN_ * Math.sin(latGNSS) + aE_ * vD_ * Math.cos(latGNSS), aD = az + gn[2] - 2 * We * vE_ * Math.cos(latGNSS) - aE_ * vN_ * Math.cos(latGNSS) - aN_ * vN_;
+                        latIner = void 0, lonIner = void 0, hIner = void 0;
+                        cont = -1;
+                        for (j = 200 * (-delay + i); j < 200 * (-delay + i) + 200; j++) {
+                            dateInertial = new Date(date.getTime() + cont * 0.05);
+                            cont++;
+                            if (!inertial[j])
+                                break;
+                            _c = inertial[j], time = _c[0], roll = _c[1], pitch = _c[2], yaw = _c[3], ax = _c[4], ay = _c[5], az = _c[6], aN = ax + gn[0] - 2 * We * vE_ * Math.sin(latGNSS) + aN_ * vD_ - aE_ * vE_ * Math.sin(latGNSS), aE = ay + gn[1] - 2 * We * vN_ * Math.sin(latGNSS) + 2 * We * vD_ * Math.cos(latGNSS) + aE_ * vN_ * Math.sin(latGNSS) + aE_ * vD_ * Math.cos(latGNSS), aD = az - gn[2] - 2 * We * vE_ * Math.cos(latGNSS) - aE_ * vN_ * Math.cos(latGNSS) - aN_ * vN_;
                             //console.log(aN, aE, aD);
                             _d = [
                                 vN + aN * TIME_DIFF,
                                 vE + aE * TIME_DIFF,
                                 vD + aD * TIME_DIFF
                             ], vN = _d[0], vE = _d[1], vD = _d[2];
-                            ro = RadiosCurvaturaGRS80.getRadioElipseMeridiana(latGNSS), nhu = RadiosCurvaturaGRS80.getRadioPrimerVertical(latGNSS), latIner = latGNSS + ((vN * TIME_DIFF) / (ro + hGNSS)), lonIner = lonGNSS + ((vE * TIME_DIFF) / (nhu + hGNSS) * Math.cos(latGNSS)), hIner = hGNSS + vD * TIME_DIFF;
+                            ro = RadiosCurvaturaGRS80.getRadioElipseMeridiana(latGNSS), nhu = RadiosCurvaturaGRS80.getRadioPrimerVertical(latGNSS);
+                            latIner = (latIner ? latIner : latGNSS) + ((vN * TIME_DIFF) / (ro + hGNSS));
+                            lonIner = (lonIner ? lonIner : lonGNSS) + ((vE * TIME_DIFF) / (nhu + hGNSS) * Math.cos(latGNSS));
+                            hIner = (hIner ? hIner : hGNSS) + vD * TIME_DIFF;
                             //console.log(latIner*180/Math.PI, lonIner*180/Math.PI, hIner, latGNSS*180/Math.PI, lonGNSS*180/Math.PI, hGNSS);
-                            data.push([latIner * 180 / Math.PI, lonIner * 180 / Math.PI, hIner, latGNSS * 180 / Math.PI, lonGNSS * 180 / Math.PI, hGNSS].join(','));
+                            //console.log(dateInertial)
+                            // Obtener la hora para cada observación
+                            data.push([dateInertial, latIner * 180 / Math.PI, lonIner * 180 / Math.PI, hIner, latGNSS * 180 / Math.PI, lonGNSS * 180 / Math.PI, hGNSS, aN, aE, aD, aN_, aE_, aD_].join(','));
                         }
                     }
-                    fs.writeFile('result', data.join('\n'), function () { });
-                    return [2 /*return*/];
+                    return [2 /*return*/, data];
             }
         });
     });
 }
 exports.mergeInertialGNSS = mergeInertialGNSS;
+checkPhoto();
+{ }
+function getSessionsMetadata(path) {
+    return __awaiter(this, void 0, void 0, function () {
+        var sessionInfo;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, _1.readLines('../sessions.txt')];
+                case 1:
+                    sessionInfo = (_a.sent())
+                        .reduce(function (array, line, index) {
+                        //console.log(line);
+                        if (line.match(REGEX_SESSION)) {
+                            var sessionID = line.match(REGEX_SESSION).join(''), obj_1 = {};
+                            return (obj_1['name'] = sessionID, array.push(obj_1), array);
+                        }
+                        var obj = array[array.length - 1];
+                        if ((line.match(REGEX_PHOTO) || []).length === 3) {
+                            var _a = line.match(REGEX_PHOTO), photoID = _a[0], date_ = _a[1], imgName = _a[2];
+                            //console.log(photoID, date_, imgName)
+                            var _b = date_.split(':'), hh = _b[0], mm = _b[1], ss = _b[2], date = new Date();
+                            date.setHours(+hh);
+                            date.setMinutes(+mm);
+                            date.setSeconds(+ss);
+                            if (!obj['photos']) {
+                                obj['photos'] = [];
+                            }
+                            return (obj['photos'].push({ photoID: photoID, date: date, imgName: imgName }), array);
+                        }
+                        if ((line.match(REGEX_START_PROJECT) || []).length === 3) {
+                            var _c = line.match(REGEX_START_PROJECT), point = _c[1], date_ = _c[2];
+                            //console.log(date_, point);
+                            var _d = date_.split(':'), hh = _d[0], mm = _d[1], ss = _d[2], date = new Date();
+                            date.setHours(+hh);
+                            date.setMinutes(+mm);
+                            date.setSeconds(+ss);
+                            //console.log(date_, date);
+                            return (obj['start'] = { point: point, date: date }, array);
+                        }
+                        if ((line.match(REGEX_END_PROJECT) || []).length === 3) {
+                            var _e = line.match(REGEX_END_PROJECT), point = _e[1], date_ = _e[2];
+                            //console.log(date_);
+                            var _f = date_.split(':'), hh = _f[0], mm = _f[1], ss = _f[2], date = new Date();
+                            date.setHours(+hh);
+                            date.setMinutes(+mm);
+                            date.setSeconds(+ss);
+                            return (obj['end'] = { point: point, date: date }, array);
+                        }
+                        if ((line.match(REGEX_GNSS_FILE) || []).length == 2) {
+                            if (!obj['files'])
+                                obj['files'] = {};
+                            if (!obj['files']['gnss'])
+                                obj['files']['gnss'] = [];
+                            var _g = line.match(REGEX_GNSS_FILE), fileName = _g[1];
+                            //console.log(fileName)
+                            return (obj['files']['gnss'].push(fileName), array);
+                        }
+                        if ((line.match(REGEX_INS_FILE) || []).length == 2) {
+                            if (!obj['files'])
+                                obj['files'] = {};
+                            if (!obj['files']['ins'])
+                                obj['files']['ins'] = [];
+                            var _h = line.match(REGEX_INS_FILE), fileName = _h[1];
+                            return (obj['files']['ins'].push(fileName), array);
+                        }
+                        return array;
+                    }, []);
+                    //console.log(sessionInfo);
+                    //fs.writeFile('sessionInfo', JSON.stringify(sessionInfo, null, "\t"), ()=>{})
+                    return [2 /*return*/, sessionInfo];
+            }
+        });
+    });
+}
+exports.getSessionsMetadata = getSessionsMetadata;
 /**
  * @name getInertialAccNFrameRotated
  * @param roll
