@@ -5,5 +5,5 @@ function __export(m) {
 __export(require("./elipsoides"));
 __export(require("./radios-curvatura"));
 __export(require("./somigliana"));
-__export(require("./gnss-data"));
+__export(require("./parse-data"));
 __export(require("./async"));

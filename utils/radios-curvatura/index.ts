@@ -1,18 +1,27 @@
 import { Elipsoide } from '../elipsoides';
 
+/**
+ * @class RadiosCurvatura : Clase para calcular los radios de curvatura 
+ *                          en un elipsoide determinado
+ * @param elipsoideName   : Nombre del elipsoide
+ */
 export class RadiosCurvatura {
 
     private elipsoide : Elipsoide;
-
+    
+    /**
+     * @constructor
+     */
     constructor(elipsoideName : string){
         this.elipsoide = new Elipsoide(elipsoideName);
     }
 
-    /*
-        @brief: Método que cálcula el valor del radio del primer vertical del elipsoide.
-        @param Latitud number: Latitud del punto de cálculo en Radianes.
-        @return float: Valor del radio del primer vetical en metros (nhu).
-    */
+    /**
+     * @method getRadioPrimerVertical
+     * @summary Método que cálcula el valor del radio del primer vertical del elipsoide.
+     * @param latitude : Latitud del punto de cálculo en Radianes.
+     * @return Valor del radio del primer vetical en metros (nhu).
+     */
     getRadioPrimerVertical(latitude : number){
         let elip = this.elipsoide;
         let numerador = elip.getSemiejeMayor();
@@ -20,11 +29,12 @@ export class RadiosCurvatura {
         return numerador/denominador;
     }
 
-    /*
-        @brief: Método que cálcula el valor del radio de la elipse meridiana.
-        @param Latitud number: Latitud del punto de cálculo en Radianes.
-        @return: float: Valor del radio de la elipse meridiana en metros (ro).
-    */
+    /**
+     * @method getRadioElipseMeridiana
+     * @summary Método que cálcula el valor del radio de la elipse meridiana.
+     * @param latitude : Latitud del punto de cálculo en Radianes.
+     * @return Valor del radio de la elipse meridiana en metros (ro).
+     */
     getRadioElipseMeridiana(latitude : number){
         let elip = this.elipsoide;
         let numerador = elip.getSemiejeMayor()*( 1 - ( elip.getPrimeraExcentricidad()**2 ) )

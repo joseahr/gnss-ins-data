@@ -1,6 +1,14 @@
 "use strict";
 var _1 = require(".");
-var G_POLO = 9.7803267715, G_ECUA = 9.8321863685, GRS80 = new _1.Elipsoide('GRS80');
+var G_POLO = 9.7803267715 // Gravedad media en el polo
+, G_ECUA = 9.8321863685 // Gravedad media en el ecuador
+, GRS80 = new _1.Elipsoide('GRS80');
+/**
+ * @function       : somigliana
+ * @summary        : Función para calcular la gravedad normal según la fórmula de somigliana
+ * @param latitude : Latitud (en radianes) del punto de cálculo
+ * @param helip    : Altura elipsoidal (en m) del punto de cálculo
+ */
 function somigliana(latitude, helip) {
     var _a = [
         GRS80.getSemiejeMayor(),
