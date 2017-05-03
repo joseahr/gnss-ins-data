@@ -36,6 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 var _1 = require("../");
 var nj = require("numjs");
+var path = require("path");
 var RadiosCurvaturaGRS80 = new _1.RadiosCurvatura('GRS80');
 var GRS80 = new _1.Elipsoide('GRS80');
 var We = GRS80.getProperties().We;
@@ -50,12 +51,14 @@ var REGEX_INS_FILE = /(INS file\ +:)|(\w+?\.\w+)/g;
  *
  * @param sesionNumber
  */
-function ParseGNSS(sesionNumber) {
+function ParseGNSS(projectPath, sessionNumber) {
     return __awaiter(this, void 0, void 0, function () {
-        var fileGNSS;
+        var filePath, fileGNSS;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, _1.readLines('../GNSSdata_ses1.txt')];
+                case 0:
+                    filePath = getGNNSFilePath(projectPath, sessionNumber);
+                    return [4 /*yield*/, _1.readLines(filePath)];
                 case 1:
                     fileGNSS = (_a.sent()).map(function (line) {
                         return line
@@ -94,19 +97,22 @@ exports.ParseGNSS = ParseGNSS;
  *
  * @param sesionNumber
  */
-function ParseInertial(sesionNumber) {
+function ParseInertial(projectPath, sessionNumber) {
     return __awaiter(this, void 0, void 0, function () {
-        var fileInertialAcc, fileInertialEuler;
+        var fileAcc, fileEuler, fileInertialAcc, fileInertialEuler;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, _1.readLines('../MT_calib_ses1.txt')];
+                case 0:
+                    fileAcc = getINSAccFilePath(projectPath, sessionNumber);
+                    fileEuler = getINSEulerFilePath(projectPath, sessionNumber);
+                    return [4 /*yield*/, _1.readLines(fileAcc)];
                 case 1:
                     fileInertialAcc = (_a.sent()).map(function (line) {
                         return line
                             .match(/(\+|-)?(\d+\.\d+)|(\+|-)?(\d+)/g)
                             .map(Number);
                     });
-                    return [4 /*yield*/, _1.readLines('../MT_euler_ses1.txt')];
+                    return [4 /*yield*/, _1.readLines(fileEuler)];
                 case 2:
                     fileInertialEuler = (_a.sent()).map(function (line) {
                         return line
@@ -158,29 +164,32 @@ exports.ParseInertial = ParseInertial;
  * @param sesionNumber : número de sesión
  * @param delay : Tiempo de desplazamiento entre los datos GNSS e Inercial
  */
-function mergeInertialGNSS(sesionNumber, delay) {
+function mergeInertialGNSS(projectPath, sesionNumber, delay) {
     return __awaiter(this, void 0, void 0, function () {
         var gnss, inertial, data, minDelay, _a, vN, vE, vD, i, _b, date, latGNSS, lonGNSS, hGNSS, vN_, vE_, vD_, aN_, aE_, aD_, gn, latIner, lonIner, hIner, cont, j, dateInertial, _c, time, roll, pitch, yaw, ax, ay, az, aN, aE, aD, ro, nhu, _d;
         return __generator(this, function (_e) {
             switch (_e.label) {
-                case 0: return [4 /*yield*/, ParseGNSS(sesionNumber)];
+                case 0: return [4 /*yield*/, ParseGNSS(projectPath, sesionNumber)];
                 case 1:
                     gnss = _e.sent();
-                    return [4 /*yield*/, ParseInertial(sesionNumber)];
+                    return [4 /*yield*/, ParseInertial(projectPath, sesionNumber)];
                 case 2:
                     inertial = _e.sent();
                     data = [];
                     minDelay = Math.ceil(gnss.length - (inertial.length / 200));
                     delay = Math.min(delay, minDelay);
                     console.log(delay);
+                    console.log(gnss.length, inertial.length);
                     _a = [0, 0, 0], vN = _a[0], vE = _a[1], vD = _a[2];
                     for (i = 0; i < gnss.length; i++) {
                         _b = gnss[i], date = _b[0], latGNSS = _b[1], lonGNSS = _b[2], hGNSS = _b[3], vN_ = _b[4], vE_ = _b[5], vD_ = _b[6], aN_ = _b[7], aE_ = _b[8], aD_ = _b[9], gn = _1.somigliana(latGNSS, hGNSS);
                         latIner = void 0, lonIner = void 0, hIner = void 0;
                         cont = -1;
                         for (j = 200 * (-delay + i); j < 200 * (-delay + i) + 200; j++) {
-                            dateInertial = new Date(date.getTime() + cont * 0.05);
+                            //console.log(j, i);
+                            //console.log(inertial[j])
                             cont++;
+                            dateInertial = new Date(date.getTime() + cont * 0.05);
                             if (!inertial[j])
                                 break;
                             _c = inertial[j], time = _c[0], roll = _c[1], pitch = _c[2], yaw = _c[3], ax = _c[4], ay = _c[5], az = _c[6], aN = ax + gn[0] - 2 * We * vE_ * Math.sin(latGNSS) + aN_ * vD_ - aE_ * vE_ * Math.sin(latGNSS), aE = ay + gn[1] - 2 * We * vN_ * Math.sin(latGNSS) + 2 * We * vD_ * Math.cos(latGNSS) + aE_ * vN_ * Math.sin(latGNSS) + aE_ * vD_ * Math.cos(latGNSS), aD = az - gn[2] - 2 * We * vE_ * Math.cos(latGNSS) - aE_ * vN_ * Math.cos(latGNSS) - aN_ * vN_;
@@ -197,23 +206,27 @@ function mergeInertialGNSS(sesionNumber, delay) {
                             //console.log(latIner*180/Math.PI, lonIner*180/Math.PI, hIner, latGNSS*180/Math.PI, lonGNSS*180/Math.PI, hGNSS);
                             //console.log(dateInertial)
                             // Obtener la hora para cada observación
-                            data.push([dateInertial, latIner * 180 / Math.PI, lonIner * 180 / Math.PI, hIner, latGNSS * 180 / Math.PI, lonGNSS * 180 / Math.PI, hGNSS, aN, aE, aD, aN_, aE_, aD_].join(','));
+                            data.push([dateInertial, latIner * 180 / Math.PI, lonIner * 180 / Math.PI, hIner, latGNSS * 180 / Math.PI, lonGNSS * 180 / Math.PI, hGNSS, aN, aE, aD, aN_, aE_, aD_]);
                         }
                     }
+                    //console.log(data[0], data[0].length, typeof data[0])
+                    //fs.writeFile('result', data.map((el : any) => el.join(',')).join('\n'), ()=>{});
                     return [2 /*return*/, data];
             }
         });
     });
 }
 exports.mergeInertialGNSS = mergeInertialGNSS;
-checkPhoto();
-{ }
-function getSessionsMetadata(path) {
+function checkPhoto() { }
+exports.checkPhoto = checkPhoto;
+function getSessionsMetadata(projectPath) {
     return __awaiter(this, void 0, void 0, function () {
-        var sessionInfo;
+        var filePath, sessionInfo;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, _1.readLines('../sessions.txt')];
+                case 0:
+                    filePath = getProjectMetadataFilePath(projectPath);
+                    return [4 /*yield*/, _1.readLines(filePath)];
                 case 1:
                     sessionInfo = (_a.sent())
                         .reduce(function (array, line, index) {
@@ -322,3 +335,19 @@ function getRotationMatrix(roll, pitch, yaw) {
     return nj.array([[c11, c12, c13], [c21, c22, c23], [c31, c32, c33]]);
 }
 exports.getRotationMatrix = getRotationMatrix;
+function getProjectMetadataFilePath(projectPath) {
+    return path.join(projectPath, 'sessions.txt');
+}
+exports.getProjectMetadataFilePath = getProjectMetadataFilePath;
+function getGNNSFilePath(projectPath, sessionNumber) {
+    return path.join(projectPath, 'GNSS', "GNSSdata_ses" + sessionNumber + ".txt");
+}
+exports.getGNNSFilePath = getGNNSFilePath;
+function getINSAccFilePath(projectPath, sessionNumber) {
+    return path.join(projectPath, 'INS', "ses" + sessionNumber, "MT_calib_ses" + sessionNumber + ".txt");
+}
+exports.getINSAccFilePath = getINSAccFilePath;
+function getINSEulerFilePath(projectPath, sessionNumber) {
+    return path.join(projectPath, 'INS', "ses" + sessionNumber, "MT_euler_ses" + sessionNumber + ".txt");
+}
+exports.getINSEulerFilePath = getINSEulerFilePath;

@@ -1,6 +1,7 @@
 import { Elipsoide, RadiosCurvatura, readLines, somigliana } from '../';
 import * as nj from 'numjs';
 import * as fs from 'fs';
+import * as path from 'path';
 
 const RadiosCurvaturaGRS80 = new RadiosCurvatura('GRS80');
 const GRS80                = new Elipsoide('GRS80');
@@ -16,8 +17,9 @@ const REGEX_INS_FILE       = /(INS file\ +:)|(\w+?\.\w+)/g;
  * 
  * @param sesionNumber 
  */
-export async function ParseGNSS(sesionNumber : number){
-    let fileGNSS = (await readLines('../GNSSdata_ses1.txt')).map( 
+export async function ParseGNSS(projectPath : string, sessionNumber : number){
+    let filePath = getGNNSFilePath(projectPath, sessionNumber);
+    let fileGNSS = (await readLines(filePath)).map( 
         line => 
             line
             .match(/(\+|-)?(\d+\.\d+)|(\+|-)?(\d+)/g) 
@@ -66,14 +68,18 @@ export async function ParseGNSS(sesionNumber : number){
  * 
  * @param sesionNumber 
  */
-export async function ParseInertial(sesionNumber : number){
-    let fileInertialAcc = (await readLines('../MT_calib_ses1.txt')).map( 
+export async function ParseInertial(projectPath : string, sessionNumber : number){
+    
+    let fileAcc   = getINSAccFilePath(projectPath, sessionNumber);
+    let fileEuler = getINSEulerFilePath(projectPath, sessionNumber);
+
+    let fileInertialAcc = (await readLines(fileAcc)).map( 
         line => 
             line
             .match(/(\+|-)?(\d+\.\d+)|(\+|-)?(\d+)/g) 
             .map(Number)
     );
-    let fileInertialEuler = (await readLines('../MT_euler_ses1.txt')).map( 
+    let fileInertialEuler = (await readLines(fileEuler)).map( 
         line => 
             line
             .match(/(\+|-)?(\d+\.\d+)|(\+|-)?(\d+)/g) 
@@ -126,15 +132,15 @@ export async function ParseInertial(sesionNumber : number){
  * @param sesionNumber : número de sesión
  * @param delay : Tiempo de desplazamiento entre los datos GNSS e Inercial
  */
-export async function mergeInertialGNSS(sesionNumber : number, delay : number){
-    let gnss     = await ParseGNSS(sesionNumber);
-    let inertial = await ParseInertial(sesionNumber);
+export async function mergeInertialGNSS(projectPath : string, sesionNumber : number, delay : number){
+    let gnss     = await ParseGNSS(projectPath, sesionNumber);
+    let inertial = await ParseInertial(projectPath, sesionNumber);
     let data = [];
     //console.log(delay, Math.ceil(gnss.length - (inertial.length/200)));
     let minDelay = Math.ceil(gnss.length - (inertial.length/200));
         delay    = Math.min(delay, minDelay);
     console.log(delay);
-    //console.log(gnss.length, inertial.length);
+    console.log(gnss.length, inertial.length);
     let [ vN, vE, vD ] = [ 0, 0, 0 ];
 
     for(let i = 0; i < gnss.length; i++){
@@ -148,8 +154,8 @@ export async function mergeInertialGNSS(sesionNumber : number, delay : number){
         for(var j = 200*(-delay + i); j < 200*(-delay + i) + 200; j++){
             //console.log(j, i);
             //console.log(inertial[j])
-            let dateInertial = new Date(date.getTime() + cont * 0.05);
             cont++;
+            let dateInertial = new Date(date.getTime() + cont * 0.05);
             if(!inertial[j]) break;
             let [ time, roll, pitch, yaw, ax, ay, az ] = inertial[j]
                 , aN = ax + gn[0] -2*We*vE_*Math.sin(latGNSS) + aN_*vD_ - aE_*vE_*Math.sin(latGNSS)
@@ -172,18 +178,23 @@ export async function mergeInertialGNSS(sesionNumber : number, delay : number){
             //console.log(latIner*180/Math.PI, lonIner*180/Math.PI, hIner, latGNSS*180/Math.PI, lonGNSS*180/Math.PI, hGNSS);
             //console.log(dateInertial)
             // Obtener la hora para cada observación
-            data.push([dateInertial, latIner*180/Math.PI, lonIner*180/Math.PI, hIner, latGNSS*180/Math.PI, lonGNSS*180/Math.PI, hGNSS, aN, aE, aD, aN_, aE_, aD_].join(','));   
+            data.push([dateInertial, latIner*180/Math.PI, lonIner*180/Math.PI, hIner, latGNSS*180/Math.PI, lonGNSS*180/Math.PI, hGNSS, aN, aE, aD, aN_, aE_, aD_]);   
         }
     }
+    //console.log(data[0], data[0].length, typeof data[0])
+    //fs.writeFile('result', data.map((el : any) => el.join(',')).join('\n'), ()=>{});
     return data;
 }
 
-export checkPhoto(){}
+export function checkPhoto(){}
 
 
-export async function getSessionsMetadata(path : string){
+export async function getSessionsMetadata(projectPath : string){
+
+    let filePath = getProjectMetadataFilePath(projectPath);
+
     let sessionInfo = 
-        (await readLines('../sessions.txt'))
+        (await readLines(filePath))
         .reduce( (array : any, line, index)=>{
             //console.log(line);
             if( line.match(REGEX_SESSION) ){
@@ -304,5 +315,20 @@ export function getRotationMatrix(roll : number, pitch : number, yaw : number){
         , c33 = Math.cos(roll)*Math.cos(pitch);
 
     return nj.array([[c11, c12, c13], [c21, c22, c23], [c31, c32, c33]]);
-    
+}
+
+export function getProjectMetadataFilePath(projectPath : string){
+    return path.join(projectPath, 'sessions.txt');
+}
+
+export function getGNNSFilePath(projectPath : string, sessionNumber : number){
+    return path.join(projectPath, 'GNSS', `GNSSdata_ses${sessionNumber}.txt`);
+}
+
+export function getINSAccFilePath(projectPath : string, sessionNumber : number){
+    return path.join(projectPath, 'INS', `ses${sessionNumber}`,`MT_calib_ses${sessionNumber}.txt`);
+}
+
+export function getINSEulerFilePath(projectPath : string, sessionNumber : number){
+    return path.join(projectPath, 'INS', `ses${sessionNumber}`,`MT_euler_ses${sessionNumber}.txt`);
 }
