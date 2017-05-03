@@ -8,3 +8,4 @@ __export(require("./somigliana"));
 __export(require("./parse-data"));
 __export(require("./async"));
 __export(require("./project"));
+__export(require("./formulas"));

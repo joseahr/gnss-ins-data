@@ -4,3 +4,4 @@ function __export(m) {
 }
 __export(require("./read-lines"));
 __export(require("./read-dir"));
+__export(require("./make-dir"));
