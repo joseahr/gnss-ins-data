@@ -15,5 +15,8 @@ p.buildAllSessions(method, 35, 55, 35, 70)
 .then(()=> p.sessions)
 .then((sessionInfo : any) =>{ 
     console.log('Mostrando gráficas', sessionInfo.length)
-    exec(`python plot.py ${projectDir} ${sessionInfo.length} ${ method == 0 ? 'libre' : 'ligado' }`, (err, stdout, stderr) => console.log(err, stdout, stderr))
+    exec(
+          `python plot.py ${projectDir} ${sessionInfo.length} ${method == 0 ? 'libre' : 'ligado'}`
+        , (err, stdout, stderr) => console.log(err, stdout, stderr)
+    );
 });

@@ -9,3 +9,4 @@ __export(require("./parse-data"));
 __export(require("./async"));
 __export(require("./project"));
 __export(require("./formulas"));
+__export(require("./proyecciones"));

@@ -5,3 +5,4 @@ export * from './parse-data';
 export * from './async';
 export * from './project';
 export * from './formulas';
+export * from './proyecciones';

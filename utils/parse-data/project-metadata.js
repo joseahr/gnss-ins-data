@@ -42,6 +42,7 @@ var REGEX_START_PROJECT = /(starting\ +->\ +)|(point\ +\d+)|(\d+:\d+:\d+)/g;
 var REGEX_END_PROJECT = /(ending\ +->\ +)|(point\ +\d+)|(\d+:\d+:\d+)/g;
 var REGEX_GNSS_FILE = /(GNSS file:)|(\w+?\.\w+)/g;
 var REGEX_INS_FILE = /(INS file\ +:)|(\w+?\.\w+)/g;
+var _a = [2, 2, 2017], day = _a[0], month = _a[1], year = _a[2]; // mes - 1
 function getProjectMetadataFilePath(projectPath) {
     return path.join(projectPath, 'sessions.txt');
 }
@@ -67,9 +68,11 @@ function getSessionsMetadata(projectPath) {
                             var _a = line.match(REGEX_PHOTO), photoID = _a[0], date_ = _a[1], imgName = _a[2];
                             //console.log(photoID, date_, imgName)
                             var _b = date_.split(':'), hh = _b[0], mm = _b[1], ss = _b[2], date = new Date();
+                            date.setFullYear(year, month, day);
                             date.setHours(+hh);
                             date.setMinutes(+mm);
                             date.setSeconds(+ss);
+                            date.setMilliseconds(0);
                             if (!obj['photos']) {
                                 obj['photos'] = [];
                             }
@@ -79,9 +82,11 @@ function getSessionsMetadata(projectPath) {
                             var _c = line.match(REGEX_START_PROJECT), point = _c[1], date_ = _c[2];
                             //console.log(date_, point);
                             var _d = date_.split(':'), hh = _d[0], mm = _d[1], ss = _d[2], date = new Date();
+                            date.setFullYear(year, month, day);
                             date.setHours(+hh);
                             date.setMinutes(+mm);
                             date.setSeconds(+ss);
+                            date.setMilliseconds(0);
                             //console.log(date_, date);
                             return (obj['start'] = { point: point, date: date }, array);
                         }
@@ -89,9 +94,11 @@ function getSessionsMetadata(projectPath) {
                             var _e = line.match(REGEX_END_PROJECT), point = _e[1], date_ = _e[2];
                             //console.log(date_);
                             var _f = date_.split(':'), hh = _f[0], mm = _f[1], ss = _f[2], date = new Date();
+                            date.setFullYear(year, month, day);
                             date.setHours(+hh);
                             date.setMinutes(+mm);
                             date.setSeconds(+ss);
+                            date.setMilliseconds(0);
                             return (obj['end'] = { point: point, date: date }, array);
                         }
                         if ((line.match(REGEX_GNSS_FILE) || []).length == 2) {

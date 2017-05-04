@@ -46,14 +46,18 @@ var Project = (function () {
     }
     Project.prototype.buildSession = function (sessionNumber, delay, method) {
         return __awaiter(this, void 0, void 0, function () {
-            var dataMerged;
+            var dataMerged, photoDetail;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, _1.mergeInertialGNSS(this.path_, sessionNumber, delay, method)];
                     case 1:
                         dataMerged = _a.sent();
+                        return [4 /*yield*/, _1.getPhotoDetail(this.path_, sessionNumber, dataMerged)];
+                    case 2:
+                        photoDetail = _a.sent();
                         console.log("Datos para la sesi\u00F3n " + sessionNumber + " calculados correctamente");
                         fs.writeFile(path.join(this.path_, 'results', "" + (method == 0 ? 'libre' : 'ligado'), "ses" + sessionNumber), dataMerged.map(function (el) { return el.join(','); }).join('\n'), function () { });
+                        fs.writeFile(path.join(this.path_, 'results', "" + (method == 0 ? 'libre' : 'ligado'), "photos_ses" + sessionNumber + ".json"), JSON.stringify(photoDetail, null, '\t'), function () { });
                         return [2 /*return*/];
                 }
             });
@@ -78,7 +82,7 @@ var Project = (function () {
                         return [4 /*yield*/, _1.makeDir(path.join(this.path_, 'results'), method == 0 ? 'libre' : 'ligado')];
                     case 3:
                         resultMethodDir = _a.sent();
-                        return [2 /*return*/, Promise.all(sessionsInfo.map(function (element, index) { return __awaiter(_this, void 0, void 0, function () {
+                        return [4 /*yield*/, Promise.all(sessionsInfo.map(function (element, index) { return __awaiter(_this, void 0, void 0, function () {
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
                                         case 0:
@@ -90,6 +94,7 @@ var Project = (function () {
                                     }
                                 });
                             }); }))];
+                    case 4: return [2 /*return*/, _a.sent()];
                 }
             });
         });

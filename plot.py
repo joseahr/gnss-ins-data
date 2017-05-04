@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 from sys import argv
 from os import path
+import json
+from math import pi
 
 PROJECT_PATH = argv[1]
 NUM_SESSIONS = int(argv[2])
@@ -26,12 +28,16 @@ for i in range(0, NUM_SESSIONS):
     aN_a = []
     aE_a = []
     aD_a = []
-    with open(path.join(PROJECT_PATH, 'results', METHOD, 'ses{}'.format(i + 1) ), 'rt') as file:
+    with open(path.join(PROJECT_PATH, 'results', METHOD, 'ses{}'.format(i + 1) ), 'rt') as file,\
+         open(path.join(PROJECT_PATH, 'results', METHOD, 'photos_ses{}.json'.format(i + 1) ), 'rt') as filephotos:
         lines = map(lambda x : map(fn, x.split(',')) , file.readlines())
-
+        photos = json.loads(''.join(filephotos.readlines()))
+        print photos
+        photos_coord = map(lambda x : x['coordinates']['geo'][0:2], photos)
+        photos_row = map(lambda x : [x['numRow'], 0], photos)
     for length, i in enumerate(lines):
         #print length, len(i)
-        dateInertial, latIner, lonIner, hIner, latGNSS, lonGNSS, hGNSS, aN, aE, aD, aN_, aE_, aD_ = i
+        dateInertial, latIner, lonIner, hIner, latGNSS, lonGNSS, hGNSS, aN, aE, aD, aN_, aE_, aD_, roll, pitch, yaw = i
         #print latIner, lonIner, hIner, latGNSS, lonGNSS, hGNSS
         iner_x.append(lonIner)
         iner_y.append(latIner)
@@ -48,16 +54,20 @@ for i in range(0, NUM_SESSIONS):
 
     plt.plot(iner_x, iner_y)
     plt.plot(gnss_x, gnss_y, 'r')
+    plt.plot(*zip(*map(lambda x: map(lambda y : y*180/pi, x)[::-1], photos_coord)), marker='o', color='black', ls='')
     plt.show()
     ###########################
     plt.plot(aNa)
     plt.plot(aN_a, 'r')
+    plt.plot(*zip(*photos_row), marker='o', color='black', ls='')
     plt.show()
     #########################3
     plt.plot(aEa)
     plt.plot(aE_a, 'r')
+    plt.plot(*zip(*photos_row), marker='o', color='black', ls='')
     plt.show()
     #####################
     plt.plot(aDa)
     plt.plot(aD_a, 'r')
+    plt.plot(*zip(*photos_row), marker='o', color='black', ls='')
     plt.show()

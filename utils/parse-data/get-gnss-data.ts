@@ -9,10 +9,16 @@ import {
     , getFreeInertialAcc
     , getNextVelocity
     , getNextPosition
+    , getSessionsMetadata
+    , getRotationMatrix
+    , GeoToUTM
  } from '../';
 
-const TIME_DIFF            = 0.005;
-
+const TIME_DIFF = 0.005;
+import * as nj from 'numjs';
+// const INSVector = [0, 0, 0]
+const GPSVector = [0, 0, 0.2]; // En el iframe
+const CamVector = [0.1940, 0.2540, 0.035]; // En el iframe
 /**
  * 
  * @param sesionNumber 
@@ -122,28 +128,33 @@ export async function mergeInertialGNSS(projectPath : string, sesionNumber : num
         , [ vN, vE, vD ] = [ 0, 0, 0 ]
         , data           = []
         , latIner, lonIner, hIner
+        , [date, latGNSS, lonGNSS, hGNSS, vN_, vE_, vD_, aN_, aE_, aD_] : any[] = []
+        , cont
     ;
     //let minDelay = Math.ceil(gnss.length - (inertial.length/200));
         //delay    = Math.min(delay, minDelay);
     for(let i = 0; i < gnss.length; i++){
 
-        let   cont = -1
-            , [ date, latGNSS, lonGNSS, hGNSS, vN_, vE_, vD_, aN_, aE_, aD_ ] : any[] = gnss[i]
-        ;
+        [ date, latGNSS, lonGNSS, hGNSS, vN_, vE_, vD_, aN_, aE_, aD_ ] = gnss[i];
         if(metodo == 1 || i == 0){
             [latIner, lonIner, hIner] = [latGNSS, lonGNSS, hGNSS];
             [vN, vE, vD] = [vN_, vE_, vD_];
         }
         //console.log(gnss[i])
+        cont = -1;
+        //console.log(date, cont)
         for(let j = 200*(-delay + i); j < 200*(-delay + i) + 200; j++){
             //console.log(j, i);
             //console.log(inertial[j])
             cont++;
-            if(!inertial[j]) break;
+            //console.log(cont)
+            if(!inertial[j]) continue;
             let [ time, roll, pitch, yaw, ax, ay, az ] = inertial[j]
                 , [ aN, aE, aD ]                       = getFreeInertialAcc(latGNSS, hGNSS, [ax, ay, az], [vN_, vE_, vD_], [aN_, aE_, aD_])
-                , dateInertial                         = new Date(date.getTime() + cont * 0.05)
+                , dateInertial                         = new Date()
             ;
+            dateInertial.setTime(date.getTime() + (cont * TIME_DIFF * 1000));
+            //console.log(dateInertial.getTime(), date, cont);
             //console.log(aN, aE, aD);
             [ vN, vE, vD ]              = getNextVelocity([ vN, vE, vD ], [ aN, aE, aD ], TIME_DIFF);
             //console.log(vN, vE, vD);
@@ -156,7 +167,7 @@ export async function mergeInertialGNSS(projectPath : string, sesionNumber : num
             //console.log(latIner*180/Math.PI, lonIner*180/Math.PI, hIner, latGNSS*180/Math.PI, lonGNSS*180/Math.PI, hGNSS);
             //console.log(dateInertial)
             // Obtener la hora para cada observación
-            data.push([dateInertial, latIner*180/Math.PI, lonIner*180/Math.PI, hIner, latGNSS*180/Math.PI, lonGNSS*180/Math.PI, hGNSS, aN, aE, aD, aN_, aE_, aD_]);   
+            data.push([dateInertial.getTime(), latIner*180/Math.PI, lonIner*180/Math.PI, hIner, latGNSS*180/Math.PI, lonGNSS*180/Math.PI, hGNSS, aN, aE, aD, aN_, aE_, aD_, roll, pitch, yaw]);   
         }
     }
     //console.log(data[0], data[0].length, typeof data[0])
@@ -164,4 +175,60 @@ export async function mergeInertialGNSS(projectPath : string, sesionNumber : num
     return data;
 }
 
-export function checkPhoto(){}
+export async function getPhotoDetail(projectPath : string, sessionNumber : number, mergedData : any[], halfRange : number = 100){
+    let sessionInfo = (await getSessionsMetadata(projectPath))[sessionNumber - 1];
+    let photos      = sessionInfo.photos;
+    if(!photos || !photos.length){
+        console.log(`La sesión ${sessionNumber} no tiene fotos. Skiping...`);
+        return [];
+    };
+    mergedData.forEach( (data, index, array)=>{
+        // Para cada línea recorremos las fotos y comprobamos la fecha
+        //console.log(data[0]);
+        let fecha = data[0];
+        //if(index == 0) console.log(photos);
+        photos.forEach(function(photo : any){
+            //console.log(photo.imgName, index, fecha);
+            if( Math.abs(fecha - photo.date.getTime()) == 0 ){
+                console.log(index, sessionNumber, photo, fecha, photo.date.getTime(), photo.date.getMilliseconds());
+                halfRange = (index > halfRange) 
+                    ? halfRange
+                    : (array.length - 1 - index > halfRange)
+                    ? halfRange
+                    : (array.length - 1 - index)
+                ;
+                let latitude = 0, longitude = 0, helip = 0, roll = 0, pitch = 0, yaw = 0;
+                for(let i = index - halfRange; i < index + halfRange; i++){
+                    let [ dateInertial, latIner, lonIner, hIner, latGNSS, lonGNSS, hGNSS, aN, aE, aD, aN_, aE_, aD_, roll_, pitch_, yaw_ ] = array[i];
+                    latitude  += latIner;
+                    longitude += lonIner;
+                    helip     += hIner;
+                    roll      += roll_;
+                    pitch     += pitch;
+                    yaw       += yaw;
+                }
+                // Cordenadas en el eframe (GPS)
+                [ latitude, longitude, helip, roll, pitch, yaw ] = [ latitude, longitude, helip, roll, pitch, yaw ].map( e => e/(2*halfRange) );
+                //console.log(latitude, longitude, helip, roll, pitch, yaw);
+                // Calcular los vectores en el camera Frame
+                let rotationMtx = getRotationMatrix(roll, pitch, yaw);
+                // Obtener coordenads UTM ya que los vectores est´n en metros
+                let [X, Y, h, ..._] : any[] = GeoToUTM([latitude*Math.PI/180, longitude*Math.PI/180, helip], 'GRS80');
+                console.log(_);
+                let [ GPSVecx, GPSVecy, GPSVecz ] = rotationMtx.dot(nj.array(GPSVector)).tolist();
+                let [ CamVecx, CamVecy, CamVecz ] = rotationMtx.dot(nj.array(CamVector)).tolist();
+                let [ XINS, YINS, hINS ] = [ X - GPSVecx, Y - GPSVecy, h - GPSVecz ];
+                let [ XCam, YCam, hCam ] = [ XINS + CamVecx, YINS + CamVecy, hINS + CamVecz ];
+                photo.coordinates = {
+                      utm : [XCam, YCam, hCam].map( (num : number) => num.toFixed(3) )
+                    , geo : [latitude*Math.PI/180, longitude*Math.PI/180, helip]
+                };
+                photo.numRow  = index;
+                photo.attitude = [roll, pitch, yaw].map( (num : number) => num.toFixed(7) );
+                console.log(XCam, YCam, hCam, XINS, YINS, hINS, X, Y, h);
+            }
+        });
+        //console.log('-------------------------------------')
+    });
+    return photos;
+}

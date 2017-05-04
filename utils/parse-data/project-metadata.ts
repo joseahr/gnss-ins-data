@@ -8,11 +8,20 @@ const REGEX_END_PROJECT    = /(ending\ +->\ +)|(point\ +\d+)|(\d+:\d+:\d+)/g;
 const REGEX_GNSS_FILE      = /(GNSS file:)|(\w+?\.\w+)/g;
 const REGEX_INS_FILE       = /(INS file\ +:)|(\w+?\.\w+)/g;
 
+const [ day, month, year ] = [ 2, 2, 2017 ]; // mes - 1
+export declare interface ISession {
+      name   : string
+    , photos : { photoID : string, date : Date, imgName : string }[]
+    , start  : { point : string, date : Date }
+    , end    : { point : string, date : Date }
+    , files  : { gnss : string[], ins : string[] }
+}
+
 export function getProjectMetadataFilePath(projectPath : string){
     return path.join(projectPath, 'sessions.txt');
 }
 
-export async function getSessionsMetadata(projectPath : string){
+export async function getSessionsMetadata(projectPath : string) : Promise<ISession[]>{
 
     let filePath = getProjectMetadataFilePath(projectPath);
 
@@ -33,9 +42,11 @@ export async function getSessionsMetadata(projectPath : string){
                 //console.log(photoID, date_, imgName)
                 let [hh, mm, ss] = date_.split(':'), 
                     date = new Date();
+                    date.setFullYear(year, month, day);
                     date.setHours(+hh);
                     date.setMinutes(+mm);
                     date.setSeconds(+ss);
+                    date.setMilliseconds(0);
                 if(!obj['photos']){
                     obj['photos'] = [];
                 }
@@ -47,9 +58,11 @@ export async function getSessionsMetadata(projectPath : string){
                 //console.log(date_, point);
                 let [hh, mm, ss] = date_.split(':'), 
                     date = new Date();
+                    date.setFullYear(year, month, day);
                     date.setHours(+hh);
                     date.setMinutes(+mm);
-                    date.setSeconds(+ss);                
+                    date.setSeconds(+ss);
+                    date.setMilliseconds(0);              
                 //console.log(date_, date);
                 return (obj['start'] = { point, date }, array);
             }
@@ -59,9 +72,11 @@ export async function getSessionsMetadata(projectPath : string){
                 //console.log(date_);
                 let [hh, mm, ss] = date_.split(':'), 
                     date = new Date();
+                    date.setFullYear(year, month, day);
                     date.setHours(+hh);
                     date.setMinutes(+mm);
                     date.setSeconds(+ss);
+                    date.setMilliseconds(0);
                 return (obj['end'] = { point, date }, array); 
             }
             
