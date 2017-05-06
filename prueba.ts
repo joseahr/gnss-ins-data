@@ -8,10 +8,11 @@ p.buildSession(2, 55);
 p.buildSession(3, 35);
 p.buildSession(4, 70);
 */
-
+let delaysGNSSINS = [35, 55, 35, 70];
+let delaysHoraGNSSFotosReloj = [25*200, 30*200, null, 19*200];
 let method = MetodoAjusteISNGNSS.Ligado;
 console.log(method);
-p.buildAllSessions(method, 35, 55, 35, 70)
+p.buildAllSessions(method, delaysGNSSINS, delaysHoraGNSSFotosReloj)
 .then(()=> p.sessions)
 .then((sessionInfo : any) =>{ 
     console.log('Mostrando gráficas', sessionInfo.length)

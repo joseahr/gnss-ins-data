@@ -44,30 +44,35 @@ var Project = (function () {
         //.then( metadata => this.sessions = metadata)
         //.then( ()=> console.log(this.sessions))
     }
-    Project.prototype.buildSession = function (sessionNumber, delay, method) {
+    Project.prototype.buildSession = function (sessionNumber, delay, method, photoDelay) {
         return __awaiter(this, void 0, void 0, function () {
-            var dataMerged, photoDetail;
+            var dataMerged, photoDetail, stops;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, _1.mergeInertialGNSS(this.path_, sessionNumber, delay, method)];
                     case 1:
                         dataMerged = _a.sent();
-                        return [4 /*yield*/, _1.getPhotoDetail(this.path_, sessionNumber, dataMerged)];
+                        return [4 /*yield*/, _1.getPhotoDetail(this.path_, sessionNumber, dataMerged, photoDelay, 100)];
                     case 2:
                         photoDetail = _a.sent();
                         console.log("Datos para la sesi\u00F3n " + sessionNumber + " calculados correctamente");
                         fs.writeFile(path.join(this.path_, 'results', "" + (method == 0 ? 'libre' : 'ligado'), "ses" + sessionNumber), dataMerged.map(function (el) { return el.join(','); }).join('\n'), function () { });
+                        if (!(!photoDetail || !photoDetail.length))
+                            return [3 /*break*/, 4];
+                        console.log('no phtos');
+                        return [4 /*yield*/, _1.getStops(this.path_, sessionNumber, dataMerged, 100)];
+                    case 3:
+                        stops = _a.sent();
+                        fs.writeFile(path.join(this.path_, 'results', "" + (method == 0 ? 'libre' : 'ligado'), "photos_ses" + sessionNumber + ".json"), JSON.stringify(stops, null, '\t'), function () { });
+                        return [2 /*return*/];
+                    case 4:
                         fs.writeFile(path.join(this.path_, 'results', "" + (method == 0 ? 'libre' : 'ligado'), "photos_ses" + sessionNumber + ".json"), JSON.stringify(photoDetail, null, '\t'), function () { });
                         return [2 /*return*/];
                 }
             });
         });
     };
-    Project.prototype.buildAllSessions = function (method) {
-        var delays = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            delays[_i - 1] = arguments[_i];
-        }
+    Project.prototype.buildAllSessions = function (method, delays, photoDelays) {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
             var sessionsInfo, resultDir, resultMethodDir;
@@ -87,7 +92,7 @@ var Project = (function () {
                                     switch (_a.label) {
                                         case 0:
                                             console.log("Calculando datos para la sesi\u00F3n " + (index + 1));
-                                            return [4 /*yield*/, this.buildSession(index + 1, delays[index], method)];
+                                            return [4 /*yield*/, this.buildSession(index + 1, delays[index], method, photoDelays[index])];
                                         case 1:
                                             _a.sent();
                                             return [2 /*return*/];

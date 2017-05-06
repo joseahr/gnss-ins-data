@@ -32,7 +32,7 @@ for i in range(0, NUM_SESSIONS):
          open(path.join(PROJECT_PATH, 'results', METHOD, 'photos_ses{}.json'.format(i + 1) ), 'rt') as filephotos:
         lines = map(lambda x : map(fn, x.split(',')) , file.readlines())
         photos = json.loads(''.join(filephotos.readlines()))
-        print photos
+        #print photos
         photos_coord = map(lambda x : x['coordinates']['geo'][0:2], photos)
         photos_row = map(lambda x : [x['numRow'], 0], photos)
     for length, i in enumerate(lines):

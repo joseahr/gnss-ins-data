@@ -37,6 +37,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var _1 = require("../");
 var TIME_DIFF = 0.005;
 var nj = require("numjs");
+var mathjs = require("mathjs");
 // const INSVector = [0, 0, 0]
 var GPSVector = [0, 0, 0.2]; // En el iframe
 var CamVector = [0.1940, 0.2540, 0.035]; // En el iframe
@@ -103,7 +104,7 @@ function ParseInertial(projectPath, sessionNumber) {
                         throw "Los archivos MT_euler y MT_calib deben tener el mismo n\u00FAmero de l\u00EDneas";
                     }
                     return [2 /*return*/, fileInertialAcc.map(function (actualAcc, index, array) {
-                            var anteriorAcc = array[index - 1], siguienteAcc = array[index + 1], _a = actualAcc.slice(1, 4), ax = _a[0], ay = _a[1], az = _a[2], anteriorEuler = fileInertialEuler[index - 1], actualEuler = fileInertialEuler[index], siguienteEuler = fileInertialEuler[index + 1];
+                            var anteriorAcc = array[index - 1] ? array[index - 1] : actualAcc, siguienteAcc = array[index + 1] ? array[index + 1] : actualAcc, _a = actualAcc.slice(1, 4), ax = _a[0], ay = _a[1], az = _a[2], actualEuler = fileInertialEuler[index], anteriorEuler = fileInertialEuler[index - 1] ? fileInertialEuler[index - 1] : actualEuler, siguienteEuler = fileInertialEuler[index + 1] ? fileInertialEuler[index + 1] : actualEuler;
                             var _b = actualEuler
                                 .slice(1, 4)
                                 .map(function (ang) { return ang * Math.PI / 180; }), roll = _b[0], pitch = _b[1], yaw = _b[2];
@@ -192,7 +193,7 @@ function mergeInertialGNSS(projectPath, sesionNumber, delay, metodo) {
     });
 }
 exports.mergeInertialGNSS = mergeInertialGNSS;
-function getPhotoDetail(projectPath, sessionNumber, mergedData, halfRange) {
+function getPhotoDetail(projectPath, sessionNumber, mergedData, photoDelay, halfRange) {
     if (halfRange === void 0) { halfRange = 100; }
     return __awaiter(this, void 0, void 0, function () {
         var sessionInfo, photos;
@@ -207,6 +208,7 @@ function getPhotoDetail(projectPath, sessionNumber, mergedData, halfRange) {
                         return [2 /*return*/, []];
                     }
                     ;
+                    console.log(photoDelay);
                     mergedData.forEach(function (data, index, array) {
                         // Para cada línea recorremos las fotos y comprobamos la fecha
                         //console.log(data[0]);
@@ -216,13 +218,13 @@ function getPhotoDetail(projectPath, sessionNumber, mergedData, halfRange) {
                             //console.log(photo.imgName, index, fecha);
                             if (Math.abs(fecha - photo.date.getTime()) == 0) {
                                 console.log(index, sessionNumber, photo, fecha, photo.date.getTime(), photo.date.getMilliseconds());
-                                halfRange = (index > halfRange)
+                                halfRange = (index + photoDelay > halfRange)
                                     ? halfRange
-                                    : (array.length - 1 - index > halfRange)
+                                    : (array.length - 1 - index - photoDelay > halfRange)
                                         ? halfRange
-                                        : (array.length - 1 - index);
+                                        : (array.length - 1 - index - photoDelay);
                                 var latitude = 0, longitude = 0, helip = 0, roll = 0, pitch = 0, yaw = 0;
-                                for (var i = index - halfRange; i < index + halfRange; i++) {
+                                for (var i = index + photoDelay - halfRange; i < index + photoDelay + halfRange; i++) {
                                     var _a = array[i], dateInertial = _a[0], latIner = _a[1], lonIner = _a[2], hIner = _a[3], latGNSS = _a[4], lonGNSS = _a[5], hGNSS = _a[6], aN = _a[7], aE = _a[8], aD = _a[9], aN_ = _a[10], aE_ = _a[11], aD_ = _a[12], roll_ = _a[13], pitch_ = _a[14], yaw_ = _a[15];
                                     latitude += latIner;
                                     longitude += lonIner;
@@ -247,7 +249,7 @@ function getPhotoDetail(projectPath, sessionNumber, mergedData, halfRange) {
                                     utm: [XCam, YCam, hCam].map(function (num) { return num.toFixed(3); }),
                                     geo: [latitude * Math.PI / 180, longitude * Math.PI / 180, helip]
                                 };
-                                photo.numRow = index;
+                                photo.numRow = index + photoDelay;
                                 photo.attitude = [roll, pitch, yaw].map(function (num) { return num.toFixed(7); });
                                 console.log(XCam, YCam, hCam, XINS, YINS, hINS, X, Y, h);
                             }
@@ -261,3 +263,56 @@ function getPhotoDetail(projectPath, sessionNumber, mergedData, halfRange) {
     });
 }
 exports.getPhotoDetail = getPhotoDetail;
+function getStops(projectPath, sessionNumber, mergedData, halfRange) {
+    if (halfRange === void 0) { halfRange = 200; }
+    return __awaiter(this, void 0, void 0, function () {
+        var dataStops, flag;
+        return __generator(this, function (_a) {
+            dataStops = [];
+            console.log(mergedData.length, 'aaaaa');
+            flag = false;
+            mergedData.forEach(function (el, index, array) {
+                if (index < halfRange)
+                    return;
+                if (mergedData.length - index < halfRange)
+                    return;
+                var Y = nj.array(mergedData.slice(index - halfRange, index + halfRange).map(function (e) { return e[7]; }));
+                var A = nj.array(mergedData.slice(index - halfRange, index + halfRange).map(function (e, i) { return [1, index - halfRange + i]; }));
+                var U = nj.array(mathjs.inv(A.T.dot(A).tolist())).dot(A.T.dot(Y)).tolist();
+                //console.log(Y)
+                //console.log(A)
+                var pendiente = U[1];
+                var ordenadaAbs = U[0];
+                var xcorte0 = ordenadaAbs / (-pendiente);
+                if (flag && pendiente < 0)
+                    flag = false;
+                //console.log(index, U[0]/(-U[1]));
+                if (xcorte0 < index - (halfRange / 4) || xcorte0 > index + (halfRange / 4)
+                    || Math.abs(el[10]) > 0.01)
+                    return;
+                if (flag)
+                    return;
+                //console.log('Parada : ' + index);
+                var _a = el.slice(1, 3), latitude = _a[0], longitude = _a[1], helip = _a[2];
+                dataStops.push({ numRow: index, coordinates: { geo: [latitude * Math.PI / 180, longitude * Math.PI / 180, helip] } });
+                flag = true;
+            });
+            return [2 /*return*/, dataStops];
+        });
+    });
+}
+exports.getStops = getStops;
+function filterArray(array) {
+    var flag = false;
+    return array.reduce(function (arr, el, idx) {
+        var actualElement = el.numRow;
+        var nextElement = array[idx + 1] ? array[idx + 1].numRow : el.numRow;
+        if (nextElement - actualElement !== 1 && flag) {
+            flag = false;
+            return arr;
+        }
+        ;
+        flag = true;
+        return (arr.push(el), arr);
+    }, []);
+}

@@ -16,6 +16,8 @@ import {
 
 const TIME_DIFF = 0.005;
 import * as nj from 'numjs';
+import * as mathjs from 'mathjs';
+
 // const INSVector = [0, 0, 0]
 const GPSVector = [0, 0, 0.2]; // En el iframe
 const CamVector = [0.1940, 0.2540, 0.035]; // En el iframe
@@ -76,12 +78,12 @@ export async function ParseInertial(projectPath : string, sessionNumber : number
     }
     
     return fileInertialAcc.map( (actualAcc, index, array)=>{
-        let   anteriorAcc    = array[index - 1]
-            , siguienteAcc   = array[index + 1]
+        let   anteriorAcc    = array[index - 1] ? array[index - 1] : actualAcc
+            , siguienteAcc   = array[index + 1] ? array[index + 1] : actualAcc
             , [ax, ay, az]   = actualAcc.slice(1, 4)
-            , anteriorEuler  = fileInertialEuler[index - 1]
             , actualEuler    = fileInertialEuler[index]
-            , siguienteEuler = fileInertialEuler[index + 1];
+            , anteriorEuler  = fileInertialEuler[index - 1] ? fileInertialEuler[index - 1] : actualEuler
+            , siguienteEuler = fileInertialEuler[index + 1] ? fileInertialEuler[index + 1] : actualEuler;
 
         let [roll, pitch, yaw] = actualEuler
             .slice(1, 4)
@@ -175,13 +177,14 @@ export async function mergeInertialGNSS(projectPath : string, sesionNumber : num
     return data;
 }
 
-export async function getPhotoDetail(projectPath : string, sessionNumber : number, mergedData : any[], halfRange : number = 100){
+export async function getPhotoDetail(projectPath : string, sessionNumber : number, mergedData : any[], photoDelay : number, halfRange : number = 100){
     let sessionInfo = (await getSessionsMetadata(projectPath))[sessionNumber - 1];
     let photos      = sessionInfo.photos;
     if(!photos || !photos.length){
         console.log(`La sesión ${sessionNumber} no tiene fotos. Skiping...`);
         return [];
     };
+    console.log(photoDelay)
     mergedData.forEach( (data, index, array)=>{
         // Para cada línea recorremos las fotos y comprobamos la fecha
         //console.log(data[0]);
@@ -191,14 +194,14 @@ export async function getPhotoDetail(projectPath : string, sessionNumber : numbe
             //console.log(photo.imgName, index, fecha);
             if( Math.abs(fecha - photo.date.getTime()) == 0 ){
                 console.log(index, sessionNumber, photo, fecha, photo.date.getTime(), photo.date.getMilliseconds());
-                halfRange = (index > halfRange) 
+                halfRange = (index + photoDelay > halfRange) 
                     ? halfRange
-                    : (array.length - 1 - index > halfRange)
+                    : (array.length - 1 - index - photoDelay > halfRange)
                     ? halfRange
-                    : (array.length - 1 - index)
+                    : (array.length - 1 - index - photoDelay)
                 ;
                 let latitude = 0, longitude = 0, helip = 0, roll = 0, pitch = 0, yaw = 0;
-                for(let i = index - halfRange; i < index + halfRange; i++){
+                for(let i = index + photoDelay - halfRange; i < index + photoDelay + halfRange; i++){
                     let [ dateInertial, latIner, lonIner, hIner, latGNSS, lonGNSS, hGNSS, aN, aE, aD, aN_, aE_, aD_, roll_, pitch_, yaw_ ] = array[i];
                     latitude  += latIner;
                     longitude += lonIner;
@@ -223,7 +226,7 @@ export async function getPhotoDetail(projectPath : string, sessionNumber : numbe
                       utm : [XCam, YCam, hCam].map( (num : number) => num.toFixed(3) )
                     , geo : [latitude*Math.PI/180, longitude*Math.PI/180, helip]
                 };
-                photo.numRow  = index;
+                photo.numRow  = index + photoDelay;
                 photo.attitude = [roll, pitch, yaw].map( (num : number) => num.toFixed(7) );
                 console.log(XCam, YCam, hCam, XINS, YINS, hINS, X, Y, h);
             }
@@ -231,4 +234,53 @@ export async function getPhotoDetail(projectPath : string, sessionNumber : numbe
         //console.log('-------------------------------------')
     });
     return photos;
+}
+
+export async function getStops(projectPath : string, sessionNumber : number, mergedData : any[], halfRange : number = 200){
+    let dataStops : any[] = [];
+    console.log(mergedData.length, 'aaaaa');
+    let flag = false;
+    mergedData.forEach( (el, index, array)=>{
+        if(index < halfRange) return;
+        if(mergedData.length - index < halfRange) return;
+
+        let Y = nj.array( mergedData.slice(index - halfRange, index + halfRange).map( e => e[7] ) );
+
+        let A = nj.array( mergedData.slice(index - halfRange, index + halfRange).map( (e, i) => [1, index - halfRange + i] ) );
+        
+        let U = nj.array(mathjs.inv( A.T.dot(A).tolist() )).dot( A.T.dot(Y) ).tolist()
+        
+        //console.log(Y)
+        //console.log(A)
+        let pendiente = U[1];
+        let ordenadaAbs = U[0];
+        let xcorte0 = ordenadaAbs/(-pendiente);
+        if(flag && pendiente < 0) flag = false;
+        //console.log(index, U[0]/(-U[1]));
+        if(
+            xcorte0 < index - (halfRange/4) || xcorte0 > index + (halfRange/4)
+            || Math.abs(el[10]) > 0.01
+        ) return;
+        if(flag) return;
+        //console.log('Parada : ' + index);
+        let [latitude, longitude, helip] = el.slice(1, 3);
+        dataStops.push({ numRow : index, coordinates : { geo : [latitude*Math.PI/180, longitude*Math.PI/180, helip] } })
+        flag = true;
+    });
+    return dataStops;
+}
+
+function filterArray(array : any[]){
+    let flag = false;
+    return array.reduce( (arr, el, idx)=>{
+        let actualElement = el.numRow;
+        let nextElement = array[idx + 1] ? array[idx + 1].numRow : el.numRow;
+
+        if(nextElement - actualElement !== 1 && flag){
+            flag = false;
+            return arr;
+        };
+        flag = true;
+        return (arr.push(el), arr);
+    }, []);
 }
