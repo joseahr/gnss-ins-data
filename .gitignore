@@ -2,5 +2,5 @@ node_modules
 *.js
 **/*.js
 dist
-**/*.JPG
-**/*.jpg
+example/**/*.JPG
+example/**/*.jpg
