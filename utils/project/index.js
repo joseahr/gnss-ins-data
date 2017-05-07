@@ -37,36 +37,57 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var _1 = require("../");
 var path = require("path");
 var fs = require("fs");
+var open = require("opn");
+var clc = require("cli-color");
+var errorLog = clc.red.bold;
+var warnLog = clc.yellow;
+var noticeLog = clc.blue;
+var mapHtmlPath = path.join(__dirname, '../../map/index.html');
 var Project = (function () {
     function Project(path_) {
+        var _this = this;
         this.path_ = path_;
+        this.mapHtml = (function () { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+            return [2 /*return*/, _1.readLines(mapHtmlPath).then(function (lines) { return lines.join('\n'); })];
+        }); }); })();
         this.sessions = _1.getSessionsMetadata(path_);
         //.then( metadata => this.sessions = metadata)
         //.then( ()=> console.log(this.sessions))
     }
     Project.prototype.buildSession = function (sessionNumber, delay, method, photoDelay) {
         return __awaiter(this, void 0, void 0, function () {
-            var dataMerged, photoDetail, stops;
+            var dataMerged, sessionPath, photoDetail, stops, mapStr_1, stopsPath, mapPath_1, mapStr, photosPath, mapPath;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, _1.mergeInertialGNSS(this.path_, sessionNumber, delay, method)];
                     case 1:
                         dataMerged = _a.sent();
+                        sessionPath = path.join(this.path_, 'results', "" + (method == 0 ? 'libre' : 'ligado'), "ses" + sessionNumber);
+                        fs.writeFile(sessionPath, dataMerged.map(function (el) { return el.join(','); }).join('\n'), function () { });
+                        console.log(noticeLog("Datos para la sesi\u00F3n " + sessionNumber + " calculados correctamente"));
                         return [4 /*yield*/, _1.getPhotoDetail(this.path_, sessionNumber, dataMerged, photoDelay, 100)];
                     case 2:
                         photoDetail = _a.sent();
-                        console.log("Datos para la sesi\u00F3n " + sessionNumber + " calculados correctamente");
-                        fs.writeFile(path.join(this.path_, 'results', "" + (method == 0 ? 'libre' : 'ligado'), "ses" + sessionNumber), dataMerged.map(function (el) { return el.join(','); }).join('\n'), function () { });
                         if (!(!photoDetail || !photoDetail.length))
-                            return [3 /*break*/, 4];
-                        console.log('no phtos');
-                        return [4 /*yield*/, _1.getStops(this.path_, sessionNumber, dataMerged, 100)];
+                            return [3 /*break*/, 5];
+                        return [4 /*yield*/, _1.getStops(this.path_, sessionNumber, dataMerged, 125)];
                     case 3:
                         stops = _a.sent();
-                        fs.writeFile(path.join(this.path_, 'results', "" + (method == 0 ? 'libre' : 'ligado'), "photos_ses" + sessionNumber + ".json"), JSON.stringify(stops, null, '\t'), function () { });
-                        return [2 /*return*/];
+                        return [4 /*yield*/, this.buildDataForMap(sessionNumber, dataMerged, stops)];
                     case 4:
-                        fs.writeFile(path.join(this.path_, 'results', "" + (method == 0 ? 'libre' : 'ligado'), "photos_ses" + sessionNumber + ".json"), JSON.stringify(photoDetail, null, '\t'), function () { });
+                        mapStr_1 = _a.sent();
+                        stopsPath = path.join(this.path_, 'results', "" + (method == 0 ? 'libre' : 'ligado'), "photos_ses" + sessionNumber + ".json");
+                        fs.writeFile(stopsPath, JSON.stringify(stops, null, '\t'), function () { });
+                        mapPath_1 = path.join(this.path_, 'results', "" + (method == 0 ? 'libre' : 'ligado'), "ses" + sessionNumber + ".html");
+                        fs.writeFile(mapPath_1, mapStr_1, function () { open(mapPath_1, { app: 'firefox' }); });
+                        return [2 /*return*/];
+                    case 5: return [4 /*yield*/, this.buildDataForMap(sessionNumber, dataMerged, photoDetail)];
+                    case 6:
+                        mapStr = _a.sent();
+                        photosPath = path.join(this.path_, 'results', "" + (method == 0 ? 'libre' : 'ligado'), "photos_ses" + sessionNumber + ".json");
+                        fs.writeFile(photosPath, JSON.stringify(photoDetail, null, '\t'), function () { });
+                        mapPath = path.join(this.path_, 'results', "" + (method == 0 ? 'libre' : 'ligado'), "ses" + sessionNumber + ".html");
+                        fs.writeFile(mapPath, mapStr, function () { open(mapPath, { app: 'firefox' }); });
                         return [2 /*return*/];
                 }
             });
@@ -91,7 +112,7 @@ var Project = (function () {
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
                                         case 0:
-                                            console.log("Calculando datos para la sesi\u00F3n " + (index + 1));
+                                            console.log(noticeLog("Calculando datos para la sesi\u00F3n " + (index + 1)));
                                             return [4 /*yield*/, this.buildSession(index + 1, delays[index], method, photoDelays[index])];
                                         case 1:
                                             _a.sent();
@@ -100,6 +121,28 @@ var Project = (function () {
                                 });
                             }); }))];
                     case 4: return [2 /*return*/, _a.sent()];
+                }
+            });
+        });
+    };
+    Project.prototype.buildDataForMap = function (sessionNumber, dataMerged, photosOrStops) {
+        return __awaiter(this, void 0, void 0, function () {
+            var htmlstr, _a, dataStrGPS, dataStrIner, dataStopsPhotos;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _a = ' ';
+                        return [4 /*yield*/, this.mapHtml];
+                    case 1:
+                        htmlstr = (_a + (_b.sent())).slice(1);
+                        dataStrGPS = "" + JSON.stringify(dataMerged.filter(function (e, idx) { return idx % 200 == 0; }).map(function (e) { return e.slice(1, 3).reverse(); }), null, '\t');
+                        dataStrIner = "" + JSON.stringify(dataMerged.map(function (e) { return e.slice(1, 3).reverse(); }), null, '\t');
+                        dataStopsPhotos = "" + JSON.stringify(photosOrStops.map(function (e) { return e.coordinates.geo.slice(0, 2).map(function (c) { return c * 180 / Math.PI; }).reverse(); }), null, '\t');
+                        return [2 /*return*/, htmlstr
+                                .replace('{{dataGPS}}', dataStrGPS)
+                                .replace('{{dataIner}}', dataStrIner)
+                                .replace('{{photosOrStops}}', dataStopsPhotos)
+                                .replace('{{title}}', "Sesi\u00F3n " + sessionNumber)];
                 }
             });
         });

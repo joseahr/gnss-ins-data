@@ -15,8 +15,14 @@ import {
  } from '../';
 
 const TIME_DIFF = 0.005;
+
 import * as nj from 'numjs';
 import * as mathjs from 'mathjs';
+import * as clc from 'cli-color';
+
+const errorLog = clc.red.bold;
+const warnLog = clc.yellow;
+const noticeLog = clc.blue;
 
 // const INSVector = [0, 0, 0]
 const GPSVector = [0, 0, 0.2]; // En el iframe
@@ -181,10 +187,14 @@ export async function getPhotoDetail(projectPath : string, sessionNumber : numbe
     let sessionInfo = (await getSessionsMetadata(projectPath))[sessionNumber - 1];
     let photos      = sessionInfo.photos;
     if(!photos || !photos.length){
-        console.log(`La sesión ${sessionNumber} no tiene fotos. Skiping...`);
+        console.log(warnLog(`La sesión ${sessionNumber} no tiene fotos. Skiping...`));
         return [];
     };
-    console.log(photoDelay)
+    //console.log(photoDelay, 'fff');
+
+    photoDelay *= 200;
+    photos.forEach(function(photo : any){ photo.updated = false });
+    //console.log(photoDelay)
     mergedData.forEach( (data, index, array)=>{
         // Para cada línea recorremos las fotos y comprobamos la fecha
         //console.log(data[0]);
@@ -193,15 +203,17 @@ export async function getPhotoDetail(projectPath : string, sessionNumber : numbe
         photos.forEach(function(photo : any){
             //console.log(photo.imgName, index, fecha);
             if( Math.abs(fecha - photo.date.getTime()) == 0 ){
-                console.log(index, sessionNumber, photo, fecha, photo.date.getTime(), photo.date.getMilliseconds());
-                halfRange = (index + photoDelay > halfRange) 
+                if(photo.updated) return;
+                photo.updated = true;
+                //console.log(index, sessionNumber, photo, fecha, photo.date.getTime(), photo.date.getMilliseconds());
+                let halfRange_ = (index + photoDelay > halfRange) 
                     ? halfRange
                     : (array.length - 1 - index - photoDelay > halfRange)
                     ? halfRange
                     : (array.length - 1 - index - photoDelay)
                 ;
                 let latitude = 0, longitude = 0, helip = 0, roll = 0, pitch = 0, yaw = 0;
-                for(let i = index + photoDelay - halfRange; i < index + photoDelay + halfRange; i++){
+                for(let i = index + photoDelay - halfRange_; i < index + photoDelay + halfRange_; i++){
                     let [ dateInertial, latIner, lonIner, hIner, latGNSS, lonGNSS, hGNSS, aN, aE, aD, aN_, aE_, aD_, roll_, pitch_, yaw_ ] = array[i];
                     latitude  += latIner;
                     longitude += lonIner;
@@ -211,24 +223,26 @@ export async function getPhotoDetail(projectPath : string, sessionNumber : numbe
                     yaw       += yaw;
                 }
                 // Cordenadas en el eframe (GPS)
-                [ latitude, longitude, helip, roll, pitch, yaw ] = [ latitude, longitude, helip, roll, pitch, yaw ].map( e => e/(2*halfRange) );
+                [ latitude, longitude, helip, roll, pitch, yaw ] = [ latitude, longitude, helip, roll, pitch, yaw ].map( e => e/(2*halfRange_) );
                 //console.log(latitude, longitude, helip, roll, pitch, yaw);
                 // Calcular los vectores en el camera Frame
                 let rotationMtx = getRotationMatrix(roll, pitch, yaw);
                 // Obtener coordenads UTM ya que los vectores est´n en metros
                 let [X, Y, h, ..._] : any[] = GeoToUTM([latitude*Math.PI/180, longitude*Math.PI/180, helip], 'GRS80');
-                console.log(_);
+                //console.log(_);
                 let [ GPSVecx, GPSVecy, GPSVecz ] = rotationMtx.dot(nj.array(GPSVector)).tolist();
                 let [ CamVecx, CamVecy, CamVecz ] = rotationMtx.dot(nj.array(CamVector)).tolist();
                 let [ XINS, YINS, hINS ] = [ X - GPSVecx, Y - GPSVecy, h - GPSVecz ];
                 let [ XCam, YCam, hCam ] = [ XINS + CamVecx, YINS + CamVecy, hINS + CamVecz ];
+                //console.log(index + halfRange_, index, halfRange_, mergedData.length)
+                photo.date = new Date(mergedData[index + photoDelay][0]);
                 photo.coordinates = {
                       utm : [XCam, YCam, hCam].map( (num : number) => num.toFixed(3) )
                     , geo : [latitude*Math.PI/180, longitude*Math.PI/180, helip]
                 };
                 photo.numRow  = index + photoDelay;
                 photo.attitude = [roll, pitch, yaw].map( (num : number) => num.toFixed(7) );
-                console.log(XCam, YCam, hCam, XINS, YINS, hINS, X, Y, h);
+                //console.log(XCam, YCam, hCam, XINS, YINS, hINS, X, Y, h);
             }
         });
         //console.log('-------------------------------------')
@@ -238,49 +252,56 @@ export async function getPhotoDetail(projectPath : string, sessionNumber : numbe
 
 export async function getStops(projectPath : string, sessionNumber : number, mergedData : any[], halfRange : number = 200){
     let dataStops : any[] = [];
-    console.log(mergedData.length, 'aaaaa');
+    //console.log(mergedData.length, 'abab');
     let flag = false;
     mergedData.forEach( (el, index, array)=>{
         if(index < halfRange) return;
         if(mergedData.length - index < halfRange) return;
 
-        let Y = nj.array( mergedData.slice(index - halfRange, index + halfRange).map( e => e[7] ) );
-
-        let A = nj.array( mergedData.slice(index - halfRange, index + halfRange).map( (e, i) => [1, index - halfRange + i] ) );
+        let y = mergedData
+            .slice(index - halfRange, index)
+            .map( e => Math.abs(e[7]) )
+            //.filter( e => e >= 0 );
+        let ymean = mathjs.mean(
+            mergedData
+            .slice(index, index + halfRange)
+            .map( e => Math.abs(e[7]) )
+        );
         
-        let U = nj.array(mathjs.inv( A.T.dot(A).tolist() )).dot( A.T.dot(Y) ).tolist()
+        if(ymean > 0.1) return;
+
+        let Y = nj.array(y);
+
+        let a = mergedData
+            .slice(index - halfRange, index)
+            .map( (e, i) => [ 1, index - halfRange + i, e ] )
+            //.filter( e => e[2] >= 0 )
+            .map( e => e.slice(0, 2) );
+        let A = nj.array(a);
+
+        try {
+            var U = nj.array(mathjs.inv( A.T.dot(A).tolist() )).dot( A.T.dot(Y) ).tolist()
+        } catch(e){
+            return;
+        }
         
         //console.log(Y)
         //console.log(A)
         let pendiente = U[1];
         let ordenadaAbs = U[0];
         let xcorte0 = ordenadaAbs/(-pendiente);
-        if(flag && pendiente < 0) flag = false;
+
+        if(flag && pendiente > 0) flag = true;
         //console.log(index, U[0]/(-U[1]));
         if(
             xcorte0 < index - (halfRange/4) || xcorte0 > index + (halfRange/4)
-            || Math.abs(el[10]) > 0.01
+            //|| Math.abs(el[10]) > 0.01
+            || flag
         ) return;
-        if(flag) return;
         //console.log('Parada : ' + index);
         let [latitude, longitude, helip] = el.slice(1, 3);
-        dataStops.push({ numRow : index, coordinates : { geo : [latitude*Math.PI/180, longitude*Math.PI/180, helip] } })
-        flag = true;
+        dataStops.push({ numRow : Math.floor(xcorte0), coordinates : { geo : [latitude*Math.PI/180, longitude*Math.PI/180, helip] } })
+        flag = false;
     });
     return dataStops;
-}
-
-function filterArray(array : any[]){
-    let flag = false;
-    return array.reduce( (arr, el, idx)=>{
-        let actualElement = el.numRow;
-        let nextElement = array[idx + 1] ? array[idx + 1].numRow : el.numRow;
-
-        if(nextElement - actualElement !== 1 && flag){
-            flag = false;
-            return arr;
-        };
-        flag = true;
-        return (arr.push(el), arr);
-    }, []);
 }

@@ -3,12 +3,6 @@ var utils_1 = require("./utils");
 var child_process_1 = require("child_process");
 var projectDir = 'C:\\Users\\Jose\\Desktop\\Practice\\Data';
 var p = new utils_1.Project(projectDir);
-/**
-p.buildSession(1, 35);
-p.buildSession(2, 55);
-p.buildSession(3, 35);
-p.buildSession(4, 70);
-*/
 var delaysGNSSINS = [35, 55, 35, 70];
 var delaysHoraGNSSFotosReloj = [25 * 200, 30 * 200, null, 19 * 200];
 var method = 1 /* Ligado */;

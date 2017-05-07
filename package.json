@@ -3,25 +3,35 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "bin": {
+    "gnss-ins-calc": "index.js"
+  },
+  "preferGlobal": true,
   "scripts": {
-    "start": "babel-node utils/elipsoides --presets es2015,stage-2",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "ntsc",
+    "build:watch": "ntsc --watch"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/bluebird": "^3.5.3",
+    "@types/cli-color": "^0.3.29",
     "@types/mathjs": "0.0.34",
     "@types/node": "^7.0.14",
+    "@types/opn": "^3.0.28",
     "babel-cli": "^6.24.1",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-stage-2": "^6.24.1",
+    "ntsc": "^0.2.0",
     "typings": "^2.1.1"
   },
   "dependencies": {
+    "@types/meow": "^3.6.2",
     "bluebird": "^3.5.0",
-    "fmin": "0.0.2",
+    "cli-color": "^1.2.0",
     "mathjs": "^3.12.3",
-    "numjs": "^0.13.1"
+    "meow": "^3.7.0",
+    "numjs": "^0.13.1",
+    "opn": "^5.0.0"
   }
 }

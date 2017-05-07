@@ -208,7 +208,8 @@ function getPhotoDetail(projectPath, sessionNumber, mergedData, photoDelay, half
                         return [2 /*return*/, []];
                     }
                     ;
-                    console.log(photoDelay);
+                    photos.forEach(function (photo) { photo.updated = false; });
+                    //console.log(photoDelay)
                     mergedData.forEach(function (data, index, array) {
                         // Para cada línea recorremos las fotos y comprobamos la fecha
                         //console.log(data[0]);
@@ -217,6 +218,9 @@ function getPhotoDetail(projectPath, sessionNumber, mergedData, photoDelay, half
                         photos.forEach(function (photo) {
                             //console.log(photo.imgName, index, fecha);
                             if (Math.abs(fecha - photo.date.getTime()) == 0) {
+                                if (photo.updated)
+                                    return;
+                                photo.updated = true;
                                 console.log(index, sessionNumber, photo, fecha, photo.date.getTime(), photo.date.getMilliseconds());
                                 halfRange = (index + photoDelay > halfRange)
                                     ? halfRange
@@ -245,6 +249,7 @@ function getPhotoDetail(projectPath, sessionNumber, mergedData, photoDelay, half
                                 var _e = rotationMtx.dot(nj.array(CamVector)).tolist(), CamVecx = _e[0], CamVecy = _e[1], CamVecz = _e[2];
                                 var _f = [X - GPSVecx, Y - GPSVecy, h - GPSVecz], XINS = _f[0], YINS = _f[1], hINS = _f[2];
                                 var _g = [XINS + CamVecx, YINS + CamVecy, hINS + CamVecz], XCam = _g[0], YCam = _g[1], hCam = _g[2];
+                                photo.date = new Date(mergedData[index + photoDelay][0]);
                                 photo.coordinates = {
                                     utm: [XCam, YCam, hCam].map(function (num) { return num.toFixed(3); }),
                                     geo: [latitude * Math.PI / 180, longitude * Math.PI / 180, helip]
@@ -269,50 +274,52 @@ function getStops(projectPath, sessionNumber, mergedData, halfRange) {
         var dataStops, flag;
         return __generator(this, function (_a) {
             dataStops = [];
-            console.log(mergedData.length, 'aaaaa');
+            console.log(mergedData.length, 'abab');
             flag = false;
             mergedData.forEach(function (el, index, array) {
                 if (index < halfRange)
                     return;
                 if (mergedData.length - index < halfRange)
                     return;
-                var Y = nj.array(mergedData.slice(index - halfRange, index + halfRange).map(function (e) { return e[7]; }));
-                var A = nj.array(mergedData.slice(index - halfRange, index + halfRange).map(function (e, i) { return [1, index - halfRange + i]; }));
-                var U = nj.array(mathjs.inv(A.T.dot(A).tolist())).dot(A.T.dot(Y)).tolist();
+                var y = mergedData
+                    .slice(index - halfRange, index)
+                    .map(function (e) { return Math.abs(e[7]); });
+                //.filter( e => e >= 0 );
+                var ymean = mathjs.mean(mergedData
+                    .slice(index, index + halfRange)
+                    .map(function (e) { return Math.abs(e[7]); }));
+                if (ymean > 0.1)
+                    return;
+                var Y = nj.array(y);
+                var a = mergedData
+                    .slice(index - halfRange, index)
+                    .map(function (e, i) { return [1, index - halfRange + i, e]; })
+                    .map(function (e) { return e.slice(0, 2); });
+                var A = nj.array(a);
+                try {
+                    var U = nj.array(mathjs.inv(A.T.dot(A).tolist())).dot(A.T.dot(Y)).tolist();
+                }
+                catch (e) {
+                    return;
+                }
                 //console.log(Y)
                 //console.log(A)
                 var pendiente = U[1];
                 var ordenadaAbs = U[0];
                 var xcorte0 = ordenadaAbs / (-pendiente);
-                if (flag && pendiente < 0)
-                    flag = false;
+                if (flag && pendiente > 0)
+                    flag = true;
                 //console.log(index, U[0]/(-U[1]));
                 if (xcorte0 < index - (halfRange / 4) || xcorte0 > index + (halfRange / 4)
-                    || Math.abs(el[10]) > 0.01)
-                    return;
-                if (flag)
+                    || flag)
                     return;
                 //console.log('Parada : ' + index);
                 var _a = el.slice(1, 3), latitude = _a[0], longitude = _a[1], helip = _a[2];
-                dataStops.push({ numRow: index, coordinates: { geo: [latitude * Math.PI / 180, longitude * Math.PI / 180, helip] } });
-                flag = true;
+                dataStops.push({ numRow: Math.floor(xcorte0), coordinates: { geo: [latitude * Math.PI / 180, longitude * Math.PI / 180, helip] } });
+                flag = false;
             });
             return [2 /*return*/, dataStops];
         });
     });
 }
 exports.getStops = getStops;
-function filterArray(array) {
-    var flag = false;
-    return array.reduce(function (arr, el, idx) {
-        var actualElement = el.numRow;
-        var nextElement = array[idx + 1] ? array[idx + 1].numRow : el.numRow;
-        if (nextElement - actualElement !== 1 && flag) {
-            flag = false;
-            return arr;
-        }
-        ;
-        flag = true;
-        return (arr.push(el), arr);
-    }, []);
-}
