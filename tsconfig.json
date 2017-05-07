@@ -5,10 +5,11 @@
         "moduleResolution": "node",
         "target": "es5",
         "noImplicitAny": true,
-        "sourceMap": false
+        "sourceMap": false,
+        "outDir": "dist"
     },
     "include": [
-        "**/*", "."
+        "**/*", ".", "**/*.py", "**/*.html"
     ],
     "exclude": [
         "node_modules"

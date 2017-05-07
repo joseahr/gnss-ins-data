@@ -2,16 +2,17 @@
   "name": "node",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "bin": {
-    "gnss-ins-calc": "index.js"
+    "gnss-ins-calc": "dist/index.js"
   },
   "preferGlobal": true,
   "scripts": {
-    "build": "ntsc",
-    "build:watch": "ntsc --watch"
+    "build": "ntsc -p . & node src/copy",
+    "build:watch": "ntsc & node src/copy & ntsc --watch",
+    "postinstall": "npm run build"
   },
-  "author": "",
+  "author": "Jose Ángel Hermosilla Rodrigo",
   "license": "ISC",
   "devDependencies": {
     "@types/bluebird": "^3.5.3",
@@ -31,6 +32,7 @@
     "cli-color": "^1.2.0",
     "mathjs": "^3.12.3",
     "meow": "^3.7.0",
+    "ntypescript": "1.201609302242.1",
     "numjs": "^0.13.1",
     "opn": "^5.0.0"
   }

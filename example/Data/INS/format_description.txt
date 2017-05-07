@@ -1,0 +1,1 @@
+Reg Day Month Year Hour Min Sec  Code ro(m) nu(m) N(m) xi(") eta(") declination(deg) gamma_n(m/s^2) gamma_e(m/s^2) gamma_d(m/s^2)

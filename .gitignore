@@ -1,3 +1,6 @@
 node_modules
 *.js
 **/*.js
+dist
+**/*.JPG
+**/*.jpg

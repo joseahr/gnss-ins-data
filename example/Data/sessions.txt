@@ -1,0 +1,83 @@
+Description of the field campaigns data measured in 03 March 2017
+
+---------
+session 1
+---------
+GNSS file: GNSSdata_num.txt
+INS file : MT_calib_ses1.txt
+INS file : MT_euler_ses1.txt
+
+
+starting -> point 104 -> 10:17:30
+        
+        photo 01  -> 10:18:55  IMG_1388
+        photo 02  -> 10:19:28  IMG_1389
+        photo 03  -> 10:20:00  IMG_1390
+        photo 04  -> 10:20:28  IMG_1391
+        photo 05  -> 10:21:15  IMG_1392
+        photo 06  -> 10:21:52  IMG_1393
+        photo 07  -> 10:22:23  IMG_1394
+        photo 08  -> 10:23:30  IMG_1395
+
+ending   -> point 110 -> 10:24:20
+
+
+---------
+session 2
+---------
+
+GNSS file: GNSSdata_num.txt
+INS file : MT_calib_ses2.txt
+INS file : MT_euler_ses2.txt
+
+starting -> point 110 -> 10:24:29
+        
+        photo 01  -> 10:25:39  IMG_1396
+        photo 02  -> 10:26:29  IMG_1397
+        photo 03  -> 10:27:00  IMG_1398
+        photo 04  -> 10:27:32  IMG_1399
+        photo 05  -> 10:28:03  IMG_1400
+        photo 06  -> 10:28:37  IMG_1401
+        photo 07  -> 10:29:12  IMG_1402
+
+ending   -> point 104 -> 10:29:30
+
+
+---------
+session 3 
+---------
+
+GNSS file: GNSSdata_num.txt
+INS file : MT_calib_ses3.txt
+INS file : MT_euler_ses3.txt
+
+No photo was taken in this session
+
+starting -> point 104 -> 10:31:40
+        
+ending   -> point 104 -> 10:36:06
+
+
+
+---------
+session 4
+---------
+
+GNSS file: GNSSdata_num.txt
+INS file : MT_calib_ses4.txt
+INS file : MT_euler_ses4.txt
+
+starting -> point 104 -> 10:38:00
+        
+        photo 01  -> 10:39:25  IMG_1403
+        photo 02  -> 10:39:53  IMG_1404
+        photo 03  -> 10:40:20  IMG_1405
+        photo 04  -> 10:40:47  IMG_1406
+        photo 05  -> 10:41:18  IMG_1407
+        photo 06  -> 10:44:16  IMG_1408
+        photo 07  -> 10:44:58  IMG_1409
+        photo 08  -> 10:45:31  IMG_1410
+        photo 09  -> 10:46:04  IMG_1411
+
+ending   -> point 104 -> 10:47:32
+
