@@ -56,6 +56,7 @@ export class Project {
         let sessionsInfo = await this.sessions;
         let resultDir    = await makeDir(this.path_, 'results');
         let resultMethodDir    = await makeDir(path.join(this.path_, 'results'), method == 0 ? 'libre' : 'ligado');
+        let resultGraphMethodDir    = await makeDir(path.join(this.path_, 'results', method == 0 ? 'libre' : 'ligado'), 'graficas');
         return await Promise.all(sessionsInfo.map( async (element : any, index : number) => {
             console.log(noticeLog(`Calculando datos para la sesión ${index + 1}`));
             await this.buildSession(index + 1, delays[index], method, photoDelays[index]);
@@ -64,7 +65,7 @@ export class Project {
     
     async buildDataForMap(sessionNumber : number, dataMerged : any[], photosOrStops : any[]){
         let htmlstr = (' ' + await this.mapHtml).slice(1);
-        let dataStrGPS = `${JSON.stringify( dataMerged.filter( (e, idx) => idx % 200 == 0 ).map( e => e.slice(1, 3).reverse() ), null, '\t' )}`;
+        let dataStrGPS = `${JSON.stringify( dataMerged.filter( (e, idx) => idx % 200 == 0 ).map( e => e.slice(4, 6).reverse() ), null, '\t' )}`;
         let dataStrIner = `${JSON.stringify( dataMerged.map( e => e.slice(1, 3).reverse() ), null, '\t' )}`;
         let dataStopsPhotos = `${JSON.stringify( photosOrStops.map( e => e.coordinates.geo.slice(0, 2).map( (c : any) => c*180/Math.PI ).reverse() ), null, '\t' )}`;
         return htmlstr

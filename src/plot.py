@@ -64,6 +64,7 @@ for i in range(0, NUM_SESSIONS):
     ax.plot(gnss_x, gnss_y, 'r', label = "Recorrido GNSS")
     ax.plot(*zip(*map(lambda x: map(lambda y : y*180/pi, x)[::-1], photos_coord)), marker='o', color='black', ls='', label = "Foto/Parada")
     ax.legend(loc='upper center', shadow=True)
+    fig.savefig(path.join(PROJECT_PATH, 'results', METHOD, 'graficas', 'ses{}_rec.jpg'.format(i + 1)))
     plt.show()
     ###########################
     fig, ax = plt.subplots()
@@ -72,6 +73,7 @@ for i in range(0, NUM_SESSIONS):
     ax.plot(aN_a, 'r', label = "Aceleración Northing GNSS")
     ax.plot(*zip(*photos_row), marker='o', color='black', ls='', label = "Foto/Parada")
     ax.legend(loc='upper center', shadow=True)
+    fig.savefig(path.join(PROJECT_PATH, 'results', METHOD, 'graficas', 'ses{}_acc_n.jpg'.format(i + 1)))
     plt.show()
     #########################
     fig, ax = plt.subplots()
@@ -80,6 +82,7 @@ for i in range(0, NUM_SESSIONS):
     ax.plot(aE_a, 'r', label = "Aceleración Northing GNSS")
     ax.plot(*zip(*photos_row), marker='o', color='black', ls='', label = "Foto/Parada")
     ax.legend(loc='upper center', shadow=True)
+    fig.savefig(path.join(PROJECT_PATH, 'results', METHOD, 'graficas', 'ses{}_acc_e.jpg'.format(i + 1)))
     plt.show()
     #####################
     fig, ax = plt.subplots()
@@ -88,4 +91,5 @@ for i in range(0, NUM_SESSIONS):
     ax.plot(aD_a, 'r', label = "Aceleración Down GNSS")
     ax.plot(*zip(*photos_row), marker='o', color='black', ls='', label = "Foto/Parada")
     ax.legend(loc='upper center', shadow=True)
+    fig.savefig(path.join(PROJECT_PATH, 'results', METHOD, 'graficas', 'ses{}_acc_d.jpg'.format(i + 1)))
     plt.show()

@@ -27,7 +27,8 @@ let p = new Project(projectDir);
 let delaysGNSSINS = (cli.flags.sessionDelays ? cli.flags.sessionDelays.split(',') : []).map(Number); //[35, 55, 35, 20];
 let delaysHoraGNSSFotosReloj = ( cli.flags.photoDelays ? cli.flags.photoDelays.split(',') : [] ).map(Number); //[25, 30, null, -30];
 let method = cli.flags.method; //MetodoAjusteISNGNSS.Ligado;
-//console.log(delaysGNSSINS, delaysHoraGNSSFotosReloj, method);
+
+console.log(delaysGNSSINS, delaysHoraGNSSFotosReloj, method);
 if(!delaysGNSSINS || !delaysGNSSINS.length){
     console.error(
         errorLog(`Error : Session delays must be provided. Make sure you set the flag --session-delays with the delays for each session.`)
@@ -42,9 +43,9 @@ if(!delaysHoraGNSSFotosReloj || !delaysHoraGNSSFotosReloj.length){
     process.exit(1);
 }
 
-let methods : any = ['free', 'bound'];
+let methods = ['free', 'bound'];
 
-if(method && !methods.includes(method)){
+if(method && methods.indexOf(method) == -1){
     console.error(
         errorLog(`Error : "method" is not a required flag, but if set, it should be one of the following values : [free|bound]`)
     );
