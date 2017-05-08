@@ -1,7 +1,7 @@
 [
 	{
 		"photoID": "photo 01",
-		"date": "2017-03-02T09:26:09.000Z",
+		"date": "2017-3-2 10:26:09",
 		"imgName": "IMG_1396",
 		"updated": true,
 		"coordinates": {
@@ -25,7 +25,7 @@
 	},
 	{
 		"photoID": "photo 02",
-		"date": "2017-03-02T09:26:59.000Z",
+		"date": "2017-3-2 10:26:59",
 		"imgName": "IMG_1397",
 		"updated": true,
 		"coordinates": {
@@ -49,7 +49,7 @@
 	},
 	{
 		"photoID": "photo 03",
-		"date": "2017-03-02T09:27:30.000Z",
+		"date": "2017-3-2 10:27:30",
 		"imgName": "IMG_1398",
 		"updated": true,
 		"coordinates": {
@@ -73,7 +73,7 @@
 	},
 	{
 		"photoID": "photo 04",
-		"date": "2017-03-02T09:28:02.000Z",
+		"date": "2017-3-2 10:28:02",
 		"imgName": "IMG_1399",
 		"updated": true,
 		"coordinates": {
@@ -97,7 +97,7 @@
 	},
 	{
 		"photoID": "photo 05",
-		"date": "2017-03-02T09:28:33.000Z",
+		"date": "2017-3-2 10:28:33",
 		"imgName": "IMG_1400",
 		"updated": true,
 		"coordinates": {
@@ -121,7 +121,7 @@
 	},
 	{
 		"photoID": "photo 06",
-		"date": "2017-03-02T09:29:07.000Z",
+		"date": "2017-3-2 10:29:07",
 		"imgName": "IMG_1401",
 		"updated": true,
 		"coordinates": {
@@ -145,7 +145,7 @@
 	},
 	{
 		"photoID": "photo 07",
-		"date": "2017-03-02T09:29:42.000Z",
+		"date": "2017-3-2 10:29:42",
 		"imgName": "IMG_1402",
 		"updated": true,
 		"coordinates": {

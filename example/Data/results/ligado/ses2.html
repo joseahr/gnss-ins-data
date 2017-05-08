@@ -232859,15 +232859,17 @@
         let lsGPS = new ol.Feature({ geometry : new ol.geom.LineString(dataGPS) });
         let lsIner = new ol.Feature({ geometry : new ol.geom.LineString(dataIner) });
 
-        let layerGPS = new ol.layer.Vector({ source : new ol.source.Vector() });
-        let layerIner = new ol.layer.Vector({
-            source : new ol.source.Vector(), 
+        let layerGPS = new ol.layer.Vector({ 
+            source : new ol.source.Vector(),
             style :  new ol.style.Style({
                 stroke: new ol.style.Stroke({
                     color: 'red',
                     width: 1
                 })
             })
+        });
+        let layerIner = new ol.layer.Vector({
+            source : new ol.source.Vector()
         });
         
         let layerPhotosOrStops = new ol.layer.Vector({ source : new ol.source.Vector() });
