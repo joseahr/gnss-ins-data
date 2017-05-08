@@ -323,10 +323,10 @@ And we can see the points in the graph:
 
 [You can also check for text file results](https://github.com/joseahr/gnss-ins-data/tree/master/example/Data/results)
 
-[Example Map](https://github.com/joseahr/gnss-ins-data/tree/master/images/example-map.png)
+![Example Map](https://github.com/joseahr/gnss-ins-data/tree/master/images/example-map.PNG)
 
 
-[Example Map 2](https://github.com/joseahr/gnss-ins-data/tree/master/images/example-map2.png)
+![Example Map 2](https://github.com/joseahr/gnss-ins-data/tree/master/images/example-map2.PNG)
 
 
 #### Free inertial solution
@@ -441,4 +441,4 @@ We could also use a RAMSAC algorith to try to automaticly correlate the accelera
 
 We can see here a more detailed representation of the bound solution:
 
-![Bound Solution Detail](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/example-bound-solution-detail.png) 
+![Bound Solution Detail](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/example-bound-solution-detail.PNG) 
