@@ -253,7 +253,6 @@ export async function getPhotoDetail(projectPath : string, sessionNumber : numbe
 export async function getStops(projectPath : string, sessionNumber : number, mergedData : any[], halfRange : number = 200){
     let dataStops : any[] = [];
     //console.log(mergedData.length, 'abab');
-    let flag = false;
     mergedData.forEach( (el, index, array)=>{
         if(index < halfRange) return;
         if(mergedData.length - index < halfRange) return;
@@ -291,17 +290,13 @@ export async function getStops(projectPath : string, sessionNumber : number, mer
         let ordenadaAbs = U[0];
         let xcorte0 = ordenadaAbs/(-pendiente);
 
-        if(flag && pendiente > 0) flag = true;
         //console.log(index, U[0]/(-U[1]));
         if(
             xcorte0 < index - (halfRange/4) || xcorte0 > index + (halfRange/4)
-            //|| Math.abs(el[10]) > 0.01
-            || flag
         ) return;
         //console.log('Parada : ' + index);
         let [latitude, longitude, helip] = el.slice(1, 3);
         dataStops.push({ numRow : Math.floor(xcorte0), coordinates : { geo : [latitude*Math.PI/180, longitude*Math.PI/180, helip] } })
-        flag = false;
     });
     return dataStops;
 }

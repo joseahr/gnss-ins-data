@@ -30,7 +30,8 @@ The **main objetive** of this practice is to ```build useful``` packages and rou
 ```
 
 >The app will output the following results
-- ``A .html file per session`` (opened on finish) providing a Openlayers 4 map in which are represented the path of the platform (calculated with data from inertial system and the obtained with GNSS techniques) and the coordinates of the photos or stops, according to each session.
+
+- ``A .html file per session`` (opened on finish) providing an Openlayers 4 map in which are represented the path of the platform (calculated with data from inertial system and the obtained with GNSS techniques) and the coordinates of the photos or stops, according to each session.
 - ``A graph per session`` of the exactly the same data displayed on the .html file
 - ``A graph per session`` of accelerations for each axis (``N,E,D`` in our case) which will plot the accelerations for obtained with the inertial system and the accelerations obtained with GNSS techniques combined with the position of the photos or stops in the graph.
 - ``A file per session`` containing all the data merged with the calculations for every epoch of the insertial sensor.(Position obtained with GNSS data, position obtained with INS system, accelerations obtained with the GNSS data, accelerations calculated with the inertial data, velocities, euler angles, ...)
@@ -72,10 +73,35 @@ Now you can use the cli-tool wherever you want.
 
 ### How it works?
 
+First of all, GNSS data is readed and parsed, so that we get an array like this:
+
+``[[date, lat, lon, h, vN, vE, vD, aN, aE, aD], ...]``
+
+where ``vN, vE, vD`` are the velocities in each axis and ``aN, aE, aD`` are the accelerations in each axis.
+
+The velocities and accelerations are calculated using the next and the previous data for each epoch.
+
+INS data (angles and accelerations) are readed and parsed, so that we get an arraylike this:
+
+``[[date, roll, pitch, yaw, ax, ay, az], ...]``
+
+date is still the relative date obtained from the INS by the way, but we will calculate it later when both data are merged.
+roll, pitch and yaw are the euler angles and [ax, ay, az] are the accelerations for (N, E, D) axis in the navigation frame.
+
+Data gaps are solved in this process.
+
+When both data are parsed, a process that aims to merge the data is executed.
+
+![Ecuación](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/equations.png) 
+
+
 # Results
 ***
+
 #### Free inertial solution
+
 Here are shown the results for the free inertial solution.
+
 >Session I (Path)
 >Points are pictures
 

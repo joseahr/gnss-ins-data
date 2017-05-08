@@ -138,7 +138,7 @@ export function getRotationMatrix(roll : number, pitch : number, yaw : number){
         , c31 = -(Math.sin(pitch))
         , c32 = Math.sin(roll)*Math.cos(pitch)
         , c33 = Math.cos(roll)*Math.cos(pitch);
-
+        
     return nj.array([[c11, c12, c13], [c21, c22, c23], [c31, c32, c33]]);
 }
 
