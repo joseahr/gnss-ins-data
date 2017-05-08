@@ -4,6 +4,8 @@
 - [Workflow](#workflow)
 	- [Software Implemented](#software-implemented)
 	- [How it works?](#how-it-works)
+		- [Calculating the coordinates of the pictures](#calculating-the-coordinates-of-the-pictures)
+		- [Calculating the coordinates of the stops](#calculating-the-coordinates-of-the-stops)
 - [Results](#results)
 
 # Introduction
@@ -73,6 +75,8 @@ Now you can use the cli-tool wherever you want.
 
 ### How it works?
 
+#### Calculating position and accelerations
+
 First of all, GNSS data is readed and parsed, so that we get an array like this:
 
 ``[[date, lat, lon, h, vN, vE, vD, aN, aE, aD], ...]``
@@ -90,13 +94,223 @@ roll, pitch and yaw are the euler angles and [ax, ay, az] are the accelerations 
 
 Data gaps are solved in this process.
 
+The accelerations are translated from the inertial frame to the navigation frame using the following rotation matrix:
+
+```typescript
+export function getRotationMatrix(roll : number, pitch : number, yaw : number){
+    let   c11 = Math.cos(pitch)*Math.cos(yaw)
+        , c12 = Math.sin(roll)*Math.sin(pitch)*Math.cos(yaw)-Math.cos(roll)*Math.sin(yaw)
+        , c13 = Math.cos(roll)*Math.sin(pitch)*Math.cos(yaw)+Math.sin(roll)*Math.sin(yaw)
+        
+        , c21 = Math.cos(pitch)*Math.sin(yaw)
+        , c22 = Math.sin(roll)*Math.sin(pitch)*Math.sin(yaw)+Math.cos(roll)*Math.cos(yaw)
+        , c23 = Math.cos(roll)*Math.sin(pitch)*Math.sin(yaw)-Math.sin(roll)*Math.cos(yaw)
+
+        , c31 = -(Math.sin(pitch))
+        , c32 = Math.sin(roll)*Math.cos(pitch)
+        , c33 = Math.cos(roll)*Math.cos(pitch);
+        
+    return nj.array([[c11, c12, c13], [c21, c22, c23], [c31, c32, c33]]);
+}
+```
+
+And the vector provided in the manual of the ``low-cost INS (Xsens-Mtx)``:
+
+```typescript
+let matrix = nj.array([ [1, 0, 0], [0, -1, 0], [0, 0, -1] ]);
+```
+
 When both data are parsed, a process that aims to merge the data is executed.
+A delay is introduced for each session in order to match the accelerations from the GNSS and the INS.
 
-![Ecuación](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/equations.png) 
+The first we check in the main loop for each epoch of the GNSS data is update the position and velocities of the inertial data with the position and velocities for the GNSS data if the method is bounded solution: 
 
+```typescript
+if(metodo == MetodoAjusteISNGNSS.Ligado || i == 0){
+	[latIner, lonIner, hIner] = [latGNSS, lonGNSS, hGNSS];
+	[vN, vE, vD] = [vN_, vE_, vD_];
+}
+```
+
+This equation is calculated with the average of 200 (1 second)observations backwards and 200 observations forwards. Finally we obtain the position with the followinf formulas:
+
+![Ecuación](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/equation.png) 
+
+#### Calculating the coordinates of the pictures
+
+First the data from sessions.txt is parsed and stored with the following structure:
+
+```json
+[
+	{
+		"photoID": "photo 01",
+		"date": "2017-3-2 10:19:20",
+		"imgName": "IMG_1388",
+		"updated": false
+	},
+	...
+]
+```
+
+For calculating the coordinates of the pictures the merged data is received as an input. We loop throught the merged data and look for the date match between a picture and the actul epoch. A delay is introduced in order to match the difference of time between the picture (measured with the watch) and the data that is calculated with the time of the GNSS receiver.
+
+Once the correct index of the photo is found, an averge of 200 observations backwards and 200 observations forwards is made for thee variables (longitude, latitude and helip) and (roll, pitch and yaw).
+
+A rotation matrix is get from the roll, pitch and yaw (averaged)
+
+```typescript
+let rotationMtx = getRotationMatrix(roll, pitch, yaw);
+```
+
+Calculate the UTM coordinates in order to have the coordinates in meters and apply the vectors to transform the coordinates of the picture from the navigation frame to the body frame.
+
+```typescript
+let [X, Y, h, ..._] : any[] = GeoToUTM([latitude*Math.PI/180, longitude*Math.PI/180, helip], 'GRS80');
+```
+
+The vectors to transform the coordinates are the following:
+
+```typescript
+const GPSVector = [0, 0, 0.2]; // En el iframe
+const CamVector = [0.1940, 0.2540, 0.035]; // En el iframe
+```
+
+Finally we apply the vectors to transform the coordinates and update the properties of the photo such as date, coordinates (geo and UTM) and attitude.
+
+```typescript
+let [ GPSVecx, GPSVecy, GPSVecz ] = rotationMtx.dot(nj.array(GPSVector)).tolist();
+let [ CamVecx, CamVecy, CamVecz ] = rotationMtx.dot(nj.array(CamVector)).tolist();
+let [ XINS, YINS, hINS ] = [ X - GPSVecx, Y - GPSVecy, h - GPSVecz ];
+let [ XCam, YCam, hCam ] = [ XINS + CamVecx, YINS + CamVecy, hINS + CamVecz ];
+
+photo.date = new Date(mergedData[index + photoDelay][0]);
+photo.coordinates = {
+	  utm : [XCam, YCam, hCam].map( (num : number) => num.toFixed(3) )
+	, geo : [latitude*Math.PI/180, longitude*Math.PI/180, helip]
+};
+photo.numRow  = index + photoDelay;
+photo.attitude = [roll, pitch, yaw].map( (num : number) => num.toFixed(7) );
+```
+
+Finally the data we will look like this:
+```json
+[
+	{
+		"photoID": "photo 01",
+		"date": "2017-3-2 10:19:20",
+		"imgName": "IMG_1388",
+		"updated": true,
+		"coordinates": {
+			"utm": [
+				"728939.565",
+				"4373364.983",
+				"55.607"
+			],
+			"geo": [
+				0.6890461402322617,
+				-0.005903300052206686,
+				55.76932904284051
+			]
+		},
+		"numRow": 15200,
+		"attitude": [
+			"0.0117388",
+			"0.0000000",
+			"0.0000000"
+		]
+	},
+	...
+]
+```
+
+#### Calculating the coordinates of the stops
+
+For the session III with didn't take any photo. For this session we will calculate the coordinates of the stops as accurate as possible.
+
+For doing this stuff we will loop throught the merged data  and take 200 observations backwards and 200 observations forwards.
+
+We will take the absolute value of the observations.
+
+We will calculate the line that best fit the points of the data backwards, and the mean for the data forwards.
+
+```typescript
+mergedData.forEach( (el, index, array)=>{
+	if(index < halfRange) return;
+	if(mergedData.length - index < halfRange) return;
+
+	let y = mergedData
+		.slice(index - halfRange, index)
+		.map( e => Math.abs(e[7]) )
+		//.filter( e => e >= 0 );
+	let ymean = mathjs.mean(
+		mergedData
+		.slice(index, index + halfRange)
+		.map( e => Math.abs(e[7]) )
+	);
+
+	if(ymean > 0.1) return;
+
+	let Y = nj.array(y);
+
+	let a = mergedData
+		.slice(index - halfRange, index)
+		.map( (e, i) => [ 1, index - halfRange + i, e ] )
+		//.filter( e => e[2] >= 0 )
+		.map( e => e.slice(0, 2) );
+	let A = nj.array(a);
+
+	try {
+		var U = nj.array(mathjs.inv( A.T.dot(A).tolist() )).dot( A.T.dot(Y) ).tolist()
+	} catch(e){
+		return;
+	}
+
+	...
+```
+
+If the intersection of the calculated line with the X axis is near the actual point and the average of the accelerations forwards is not greather than 0.1 we consider a stop is done.
+
+```typescript	
+	...
+
+        let pendiente = U[1];
+        let ordenadaAbs = U[0];
+        let xcorte0 = ordenadaAbs/(-pendiente);
+
+        //console.log(index, U[0]/(-U[1]));
+        if(
+            xcorte0 < index - (halfRange/4) || xcorte0 > index + (halfRange/4)
+        ) return;
+        //console.log('Parada : ' + index);
+        let [latitude, longitude, helip] = el.slice(1, 4);
+        dataStops.push({ numRow : Math.floor(xcorte0), coordinates : { geo : [latitude*Math.PI/180, longitude*Math.PI/180, helip] } })
+    });
+    return dataStops;
+}
+```
+
+The data obtained for the stops is another json with the coordinates:
+
+```json
+[
+	{
+		"numRow": 2980,
+		"coordinates": {
+			"geo": [
+				0.6890494886631449,
+				-0.005901773640853095,
+				55.50585634786639
+			]
+		}
+	}, 
+	...
+]
+```
 
 # Results
 ***
+
+[You can also check for text file results]()
 
 #### Free inertial solution
 
@@ -199,3 +413,7 @@ Here are shown the results for the bounded solution.
 >Session IIII (Acceleration Down Axis)
 
 ![Session IIII (Acceleration Down Axis)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/libre/graficas/ses4_acc_d.jpg) 
+
+
+# Results
+***

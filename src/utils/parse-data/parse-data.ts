@@ -202,8 +202,7 @@ export async function getPhotoDetail(projectPath : string, sessionNumber : numbe
         //if(index == 0) console.log(photos);
         photos.forEach(function(photo : any){
             //console.log(photo.imgName, index, fecha);
-            if( Math.abs(fecha - photo.date.getTime()) == 0 ){
-                if(photo.updated) return;
+            if( !photo.updated && Math.abs(fecha - photo.date.getTime()) == 0 ){
                 photo.updated = true;
                 //console.log(index, sessionNumber, photo, fecha, photo.date.getTime(), photo.date.getMilliseconds());
                 let halfRange_ = (index + photoDelay > halfRange) 
@@ -235,7 +234,7 @@ export async function getPhotoDetail(projectPath : string, sessionNumber : numbe
                 let [ XINS, YINS, hINS ] = [ X - GPSVecx, Y - GPSVecy, h - GPSVecz ];
                 let [ XCam, YCam, hCam ] = [ XINS + CamVecx, YINS + CamVecy, hINS + CamVecz ];
                 //console.log(index + halfRange_, index, halfRange_, mergedData.length)
-                photo.date = new Date(mergedData[index + photoDelay][0]);
+                photo.date = new Date(mergedData[index + photoDelay][0]).toLocaleString();
                 photo.coordinates = {
                       utm : [XCam, YCam, hCam].map( (num : number) => num.toFixed(3) )
                     , geo : [latitude*Math.PI/180, longitude*Math.PI/180, helip]
@@ -295,7 +294,7 @@ export async function getStops(projectPath : string, sessionNumber : number, mer
             xcorte0 < index - (halfRange/4) || xcorte0 > index + (halfRange/4)
         ) return;
         //console.log('Parada : ' + index);
-        let [latitude, longitude, helip] = el.slice(1, 3);
+        let [latitude, longitude, helip] = el.slice(1, 4);
         dataStops.push({ numRow : Math.floor(xcorte0), coordinates : { geo : [latitude*Math.PI/180, longitude*Math.PI/180, helip] } })
     });
     return dataStops;
