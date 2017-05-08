@@ -441,4 +441,4 @@ We could also use a RAMSAC algorith to try to automaticly correlate the accelera
 
 We can see here a more detailed representation of the bound solution:
 
-[Bound Solution Detail](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/bound-solution-detail.png) 
+![Bound Solution Detail](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/example-bound-solution-detail.png) 
