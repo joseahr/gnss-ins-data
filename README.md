@@ -314,10 +314,20 @@ The data obtained for the stops is another json with the coordinates:
 ]
 ```
 
+And we can see the points in the graph:
+
+[Example Stops](https://github.com/joseahr/gnss-ins-data/tree/master/images/example-stop.png)
+
 # Results
 ***
 
 [You can also check for text file results](https://github.com/joseahr/gnss-ins-data/tree/master/example/Data/results)
+
+[Example Map](https://github.com/joseahr/gnss-ins-data/tree/master/images/example-map.png)
+
+
+[Example Map 2](https://github.com/joseahr/gnss-ins-data/tree/master/images/example-map2.png)
+
 
 #### Free inertial solution
 
@@ -428,3 +438,7 @@ Here are shown the results for the bounded solution.
 We can say that the INS data could be useful in case of signal loss. Algorith such as Kalman filter could be used in that case in order to predict the positions.
 
 We could also use a RAMSAC algorith to try to automaticly correlate the accelerations instead of manually insert a time delay.
+
+We can see here a more detailed representation of the bound solution:
+
+[Bound Solution Detail](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/bound-solution-detail.png) 
