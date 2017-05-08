@@ -316,17 +316,17 @@ The data obtained for the stops is another json with the coordinates:
 
 And we can see the points in the graph:
 
-[Example Stops](https://github.com/joseahr/gnss-ins-data/tree/master/images/example-stop.png)
+![Example Stops](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/example-stop.png)
 
 # Results
 ***
 
 [You can also check for text file results](https://github.com/joseahr/gnss-ins-data/tree/master/example/Data/results)
 
-![Example Map](https://github.com/joseahr/gnss-ins-data/tree/master/images/example-map.PNG)
+![Example Map](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/example-map.PNG)
 
 
-![Example Map 2](https://github.com/joseahr/gnss-ins-data/tree/master/images/example-map2.PNG)
+![Example Map 2](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/example-map2.PNG)
 
 
 #### Free inertial solution
