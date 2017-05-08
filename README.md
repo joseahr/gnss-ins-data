@@ -1,3 +1,11 @@
+# Content
+---
+- [Introduction](#introduction)
+- [Workflow](#workflow)
+	- [Software Implemented](#software-implemented)
+	- [How it works?](#how-it-works)
+- [Results](#results)
+
 # Introduction
 ***
 The **main objetive** of this practice is to ```build useful``` packages and routines for the collected data coming from mobile platform equipped with a ``low-cost INS (Xsens-Mtx)`` along with a ``GNSS receiver``.
@@ -31,6 +39,8 @@ The **main objetive** of this practice is to ```build useful``` packages and rou
 # Workflow
 ***
 
+### Software implemented
+
 >I've done some modules in order to organize the programming workflow. These are the implemented modules and its use
 
 - [``async``](https://github.com/joseahr/gnss-ins-data/tree/master/src/utils/async) Some helpers to read data asynchronously, but write JS code in a synchronous manner, wrapping the stuff in [async functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function).
@@ -60,23 +70,29 @@ npm install
 ```
 Now you can use the cli-tool wherever you want.
 
+### How it works?
+
 # Results
 ***
 #### Free inertial solution
 Here are shown the results for the free inertial solution.
 >Session I (Path)
+>Points are pictures
 
 ![>Session I (Path)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/libre/graficas/ses1_rec.jpg) 
 
 >Session II (Path)
+>Points are pictures
 
 ![>Session II (Path)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/libre/graficas/ses2_rec.jpg) 
 
 >Session III (Path)
+>Points are sops
 
 ![>Session III (Path)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/libre/graficas/ses3_rec.jpg) 
 
 >Session IIII (Path)
+>Points are pictures
 
 ![>Session IIII (Path)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/libre/graficas/ses4_rec.jpg) 
 
@@ -84,25 +100,30 @@ Here are shown the results for the free inertial solution.
 #### Bounded solution
 Here are shown the results for the bounded solution.
 >Session I (Path)
+>Points are pictures
 
 ![>Session I (Path)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/ligado/graficas/ses1_rec.jpg) 
 
 >Session II (Path)
+> Points are pictures
 
 ![>Session II (Path)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/ligado/graficas/ses2_rec.jpg) 
 
 
 >Session III (Path)
+>Points are stops
 
 ![>Session III (Path)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/ligado/graficas/ses3_rec.jpg) 
 
 >Session IIII (Path)
+>Points are pictures
 
 ![>Session IIII (Path)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/ligado/graficas/ses4_rec.jpg) 
 
 #### Accelerations
 
 >Session I (Acceleration Northing Axis)
+>Points are pictures
 
 ![Session I (Acceleration Northing Axis)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/libre/graficas/ses1_acc_n.jpg) 
 
@@ -115,6 +136,7 @@ Here are shown the results for the bounded solution.
 ![Session I (Acceleration Down Axis)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/libre/graficas/ses1_acc_d.jpg) 
 
 >Session II (Acceleration Northing Axis)
+>Points are pictures
 
 ![Session II (Acceleration Northing Axis)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/libre/graficas/ses2_acc_n.jpg) 
 
@@ -126,9 +148,10 @@ Here are shown the results for the bounded solution.
 
 ![Session II (Acceleration Down Axis)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/libre/graficas/ses2_acc_d.jpg) 
 
->Session III (Acceleration Northing Axis)
+> Session III (Acceleration Northing Axis)
+> Points are stops
 
-![Session III (Acceleration Northing Axis)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/libre/graficas/ses3_acc_n.jpg) 
+![Session III (Acceleration Northing Axis)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/libre/graficas/ses3_acc_n.jpg)
 
 >Session III (Acceleration Easting Axis)
 
@@ -139,6 +162,7 @@ Here are shown the results for the bounded solution.
 ![Session III (Acceleration Down Axis)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/libre/graficas/ses3_acc_d.jpg) 
 
 >Session IIII (Acceleration Northing Axis)
+>Points are pictures
 
 ![Session IIII (Acceleration Northing Axis)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/libre/graficas/ses4_acc_n.jpg) 
 
