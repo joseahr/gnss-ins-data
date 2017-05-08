@@ -7,6 +7,7 @@
 		- [Calculating the coordinates of the pictures](#calculating-the-coordinates-of-the-pictures)
 		- [Calculating the coordinates of the stops](#calculating-the-coordinates-of-the-stops)
 - [Results](#results)
+- [Conclusions](#conclusions)
 
 # Introduction
 ***
@@ -34,7 +35,7 @@ The **main objetive** of this practice is to ```build useful``` packages and rou
 
 Examples:
 
-![Ecuación](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/terminal.png) 
+![Terminal](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/terminal.png) 
 
 
 >The app will output the following results
@@ -421,5 +422,9 @@ Here are shown the results for the bounded solution.
 ![Session IIII (Acceleration Down Axis)](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/libre/graficas/ses4_acc_d.jpg) 
 
 
-# Results
+# Conclusions
 ***
+
+We can say that the INS data could be useful in case of signal loss. Algorith such as Kalman filter could be used in that case in order to predict the positions.
+
+We could also use a RAMSAC algorith to try to automaticly correlate the accelerations instead of manually insert a time delay.
