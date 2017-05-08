@@ -20,7 +20,8 @@ The **main objetive** of this practice is to ```build useful``` packages and rou
 - ``Python`` (For building the result graphs from the results)
 
 >The final tool is a ``command line interface tool`` which accept the following parameters
-```p
+
+```xterm
 	Usage
 	  $ gnss-ins-calc <path/to/project/data> [-- <session-delays> [args]] [-- <photo-delays> [args]] [-- <method> [free|bound]]
 	Options
@@ -30,6 +31,11 @@ The **main objetive** of this practice is to ```build useful``` packages and rou
 	Example
 	  $ gnss-ins-calc . --session-delays 10,20,30,40 --photo-delays 10,20,30,40
 ```
+
+Examples:
+
+![Ecuación](https://raw.githubusercontent.com/joseahr/gnss-ins-data/master/images/terminal.png) 
+
 
 >The app will output the following results
 
@@ -310,7 +316,7 @@ The data obtained for the stops is another json with the coordinates:
 # Results
 ***
 
-[You can also check for text file results]()
+[You can also check for text file results](https://github.com/joseahr/gnss-ins-data/tree/master/example/Data/results)
 
 #### Free inertial solution
 
