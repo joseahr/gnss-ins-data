@@ -33,7 +33,7 @@ The **main objetive** of this practice is to ```build useful``` packages and rou
 
 >I've done some modules in order to organize the programming workflow. These are the implemented modules and its use
 
-- [``async``](https://github.com/joseahr/gnss-ins-data/tree/master/src/utils/async) Some helpers to read data asynchronously, but write JS as if it were synchronous, wrapping the stuff in [async functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function).
+- [``async``](https://github.com/joseahr/gnss-ins-data/tree/master/src/utils/async) Some helpers to read data asynchronously, but write JS code in a synchronous manner, wrapping the stuff in [async functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function).
 - [``elipsoides``](https://github.com/joseahr/gnss-ins-data/tree/master/src/utils/elipsoides) Contain a helper class to obtain ellipsoide parameters. By the way, only the following ellipsoids are available in the file [elipsoides.json](https://github.com/joseahr/gnss-ins-data/blob/master/src/utils/elipsoides/elipsoides.json): GRS80 and WGS84.
 - [``formulas``](https://github.com/joseahr/gnss-ins-data/tree/master/src/utils/formulas) Contain some functions which make numeric calculations with data needed for the practice.
 - [``proyecciones``](https://github.com/joseahr/gnss-ins-data/tree/master/src/utils/proyecciones) By the way only contains [a function](https://github.com/joseahr/gnss-ins-data/blob/master/src/utils/proyecciones/geo-utm.ts) to convert geographic coordinates to UTM projected coordinates.
