@@ -11,12 +11,13 @@ const noticeLog = clc.blue;
 
 const cli = meow(`
 	Usage
-	  $ gnss-ins-calc <path/to/project/data> [-- <session-delay> [args]] [-- <photo-delays> [args]] [-- <method> [libre|ligado]]
+	  $ gnss-ins-calc <path/to/project/data> [-- <session-delays> [args]] [-- <photo-delays> [args]] [-- <method> [free|bound]]
 	Options
-	  --session-delay  A list of delays for each session (Used to match the GNSS and INS data together)
-	  --ext   A list of delays for each session (Used to match the pictures with the merged data (GNSS + INS))
+	  --session-delays  A list of delays for each session (Used to match the GNSS and INS data together)
+	  --photo-delays   A list of delays for each session (Used to match the pictures with the merged data (GNSS + INS))
+	  --method The method for calculating the platform position  [free|bound] default : bound
 	Example
-	  $ gnss-ins-calc . --session-delay 10,20,30,40 --photo-delay 10,20,30,40
+	  $ gnss-ins-calc . --session-delays 10,20,30,40 --photo-delays 10,20,30,40
 `);
 
 cli.flags.app = cli.input.slice(1);
